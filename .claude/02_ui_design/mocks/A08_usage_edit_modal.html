@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+【画面名称】管理者用 利用回数修正モーダル (Usage Edit Modal)
+【ファイル名】admin_usage_edit_modal.html (A08)
+
+【概要】
+API利用回数の誤りを手動で補正するための機能コンポーネントです。
+A07（一覧画面）から呼び出されることを想定しています。
+課金に関わる重要なデータ操作のため、Before/Afterの比較や理由の記録を重視したUIです。
+
+【主な機能】
+1. 現状確認エリア
+   - 対象の拠点、アプリ、年月
+   - 現在のカウント数と上限に対する割合グラフ
+2. 修正操作エリア
+   - カウント数の直接入力 / 増減ボタンによる微調整
+   - **差分（Delta）の自動計算表示**（例: +500, -1,200）
+   - **修正後のシミュレーション表示**（修正後の利用率をプレビュー）
+3. 監査用入力
+   - 修正理由（必須入力）
+   - プリセット理由選択機能
+
+【使用ライブラリ (CDN)】
+- Tailwind CSS (v3.4)
+- Alpine.js
+- FontAwesome
+================================================================================
+-->
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage Edit Modal - Dify Gateway</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 antialiased h-screen overflow-hidden relative"
+      x-data="{
+          // モーダル制御（初期表示で開く）
+          open: true,
+
+          // データモデル
+          data: {
+              id: 101,
+              month: '2023-10',
+              team: '東京本社 営業部',
+              plan: 'Standard Plan',
+              app: 'カスタマーサポートBot',
+              limit: 100000,
+              currentCount: 45280,
+          },
+
+          // フォーム入力値
+          editValue: 45280,
+          reason: '',
+          presetReason: '',
+
+          // 計算プロパティ相当の関数
+          get diff() {
+              return this.editValue - this.data.currentCount;
+          },
+
+          get afterPercentage() {
+              if (this.data.limit === 0) return 0;
+              return Math.min(100, Math.round((this.editValue / this.data.limit) * 100));
+          },
+
+          // プリセット理由反映
+          applyPreset() {
+              if (this.presetReason) {
+                  this.reason = this.presetReason;
+              }
+          },
+
+          // 保存アクション
+          save() {
+              if (!this.reason) return;
+              alert('修正を保存しました。\n差分: ' + (this.diff > 0 ? '+' : '') + this.diff);
+              this.open = false;
+          }
+      }">
+
+    <!-- ▼▼▼ Background Dummy Content (背景の一覧画面ダミー) ▼▼▼ -->
+    <div class="p-8 filter blur-sm pointer-events-none select-none h-full overflow-hidden flex flex-col">
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">利用状況・実績管理</h1>
+            <div class="flex gap-2">
+                <div class="h-10 w-32 bg-gray-200 rounded"></div>
+            </div>
+        </header>
+        <div class="bg-white rounded-xl shadow border border-gray-200 flex-1 overflow-hidden">
+            <div class="border-b border-gray-200 p-4 bg-gray-50 flex gap-4">
+                <div class="h-8 w-40 bg-gray-200 rounded"></div>
+                <div class="h-8 w-60 bg-gray-200 rounded"></div>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="h-12 w-full bg-gray-100 rounded"></div>
+                <div class="h-12 w-full bg-gray-100 rounded"></div>
+                <div class="h-12 w-full bg-gray-100 rounded"></div>
+                <div class="h-12 w-full bg-gray-100 rounded"></div>
+                <div class="h-12 w-full bg-gray-100 rounded"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ▼▼▼ A08: Usage Edit Modal (メインコンテンツ) ▼▼▼ -->
+    <div x-show="open"
+         class="fixed inset-0 z-50 overflow-y-auto"
+         aria-labelledby="modal-title" role="dialog" aria-modal="true"
+         x-transition:enter="ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+
+            <!-- Overlay Background -->
+            <div class="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity" @click="open = false"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <!-- Modal Panel -->
+            <div class="inline-block align-middle bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full border border-gray-100"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-bold text-gray-800 flex items-center gap-2">
+                        <span class="bg-indigo-100 text-indigo-600 p-2 rounded-lg">
+                            <i class="fas fa-pen-to-square"></i>
+                        </span>
+                        利用回数の修正
+                    </h3>
+                    <button @click="open = false" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="px-6 py-6">
+
+                    <!-- 1. Target Information (対象データ情報) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">対象年月</p>
+                            <p class="text-sm font-bold text-gray-900 font-mono" x-text="data.month"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">契約プラン</p>
+                            <p class="text-sm font-bold text-gray-900" x-text="data.plan + ' (' + data.limit.toLocaleString() + ' limit)'"></p>
+                        </div>
+                        <div class="md:col-span-2 flex items-center gap-3 pt-2 border-t border-gray-200">
+                            <div class="flex-1">
+                                <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">拠点 (Team)</p>
+                                <p class="text-sm font-medium text-gray-900" x-text="data.team"></p>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">アプリ (App)</p>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-robot text-indigo-400"></i>
+                                    <p class="text-sm font-medium text-gray-900" x-text="data.app"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Edit Counter (修正エリア) -->
+                    <div class="mb-8">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">修正後の利用回数</label>
+
+                        <div class="flex items-center gap-4">
+                            <!-- Input -->
+                            <div class="relative flex-1">
+                                <button @click="editValue = Math.max(0, parseInt(editValue) - 100)" class="absolute left-0 top-0 bottom-0 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-l-lg border-r border-gray-300 transition-colors">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" x-model="editValue"
+                                       class="block w-full text-center text-2xl font-bold text-gray-800 border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 py-3 rounded-lg shadow-sm"
+                                       :class="editValue > data.limit ? 'text-red-600 bg-red-50' : ''">
+                                <button @click="editValue = parseInt(editValue) + 100" class="absolute right-0 top-0 bottom-0 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-r-lg border-l border-gray-300 transition-colors">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+
+                            <!-- Diff Indicator -->
+                            <div class="w-32 text-right">
+                                <p class="text-xs text-gray-500 mb-1">前回からの差分</p>
+                                <span class="text-lg font-bold font-mono px-2 py-1 rounded"
+                                      :class="diff > 0 ? 'bg-red-100 text-red-700' : (diff < 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500')">
+                                    <span x-text="diff > 0 ? '+' : ''"></span><span x-text="diff.toLocaleString()"></span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Simulation Bar (Before / After) -->
+                        <div class="mt-4 space-y-2">
+                            <!-- Before -->
+                            <div class="flex items-center text-xs text-gray-500">
+                                <span class="w-12">現在:</span>
+                                <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden mx-2">
+                                    <div class="h-full bg-gray-400" :style="'width: ' + Math.min(100, (data.currentCount / data.limit) * 100) + '%'"></div>
+                                </div>
+                                <span class="w-16 text-right" x-text="data.currentCount.toLocaleString()"></span>
+                            </div>
+                            <!-- After -->
+                            <div class="flex items-center text-xs font-bold text-indigo-700">
+                                <span class="w-12">修正後:</span>
+                                <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden mx-2 relative">
+                                    <div class="h-full transition-all duration-500"
+                                         :class="editValue > data.limit ? 'bg-red-500' : 'bg-indigo-500'"
+                                         :style="'width: ' + afterPercentage + '%'"></div>
+                                    <!-- Limit Line -->
+                                    <div class="absolute top-0 bottom-0 w-0.5 bg-red-300 z-10" style="left: 100%" title="Limit"></div>
+                                </div>
+                                <span class="w-16 text-right" x-text="editValue.toLocaleString()"></span>
+                            </div>
+                            <!-- Limit Warning -->
+                            <p x-show="editValue > data.limit" class="text-xs text-red-600 font-bold mt-1 text-center animate-pulse">
+                                <i class="fas fa-exclamation-triangle"></i> プラン上限を超過しています
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 3. Reason & Audit (理由入力) -->
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">
+                            修正理由 <span class="text-red-500 text-xs font-normal">*必須</span>
+                        </label>
+
+                        <!-- Preset Buttons -->
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <button @click="presetReason='テスト利用分の除外'; applyPreset()" class="text-xs px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600">テスト利用分除外</button>
+                            <button @click="presetReason='システム障害による補填'; applyPreset()" class="text-xs px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600">システム障害補填</button>
+                            <button @click="presetReason='初期設定ミスによる修正'; applyPreset()" class="text-xs px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600">初期設定ミス</button>
+                        </div>
+
+                        <textarea x-model="reason" rows="3"
+                                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md py-2 px-3"
+                                  placeholder="具体的な修正理由を入力してください（例: 10/25 14:00〜15:00の誤リクエスト分 500回を減算）"></textarea>
+                        <p class="text-xs text-gray-400 mt-1 text-right">※操作ログに記録されます（担当者: Admin User）</p>
+                    </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div class="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-3 border-t border-gray-100">
+                    <button @click="save()"
+                            :disabled="!reason || diff === 0"
+                            class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed sm:ml-3 sm:w-auto sm:text-sm">
+                        修正を保存
+                    </button>
+                    <button @click="open = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        キャンセル
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

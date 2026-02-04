@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+【画面名称】管理者用 CSV一括登録画面 (Admin CSV Import)
+【ファイル名】admin_csv_import.html
+
+【概要】
+多数の拠点（チーム）やユーザーをCSVファイルから一括で登録するための画面です。
+初期セットアップや大規模な組織変更時に使用されます。
+
+【主な機能】
+1. ファイルアップロード
+   - ドラッグ＆ドロップ対応エリア
+   - CSVテンプレートのダウンロード
+2. インポートプレビュー
+   - 読み込んだCSVデータをテーブル形式で確認（クライアントサイドで擬似表示）
+3. 処理実行・ログ表示
+   - プログレスバーによる進捗表示
+   - 行ごとの処理結果（成功/失敗）のログ出力
+
+【使用ライブラリ (CDN)】
+- Tailwind CSS (v3.4)
+- Alpine.js
+- FontAwesome
+================================================================================
+-->
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Import - Dify Gateway</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        [x-cloak] { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Loading Animation */
+        @keyframes pulse-border {
+            0% { border-color: #e5e7eb; }
+            50% { border-color: #6366f1; }
+            100% { border-color: #e5e7eb; }
+        }
+        .animate-pulse-border {
+            animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased"
+      x-data="{
+          sidebarOpen: false,
+          fileSelected: false,
+          fileName: '',
+          fileSize: '',
+          isDragging: false,
+          previewData: [],
+          importing: false,
+          progress: 0,
+          logs: [],
+          importCompleted: false,
+
+          // ファイル選択時の処理 (シミュレーション)
+          handleFileSelect(event) {
+              const file = event.target.files ? event.target.files[0] : null;
+              this.processFile(file);
+          },
+
+          handleDrop(event) {
+              this.isDragging = false;
+              const file = event.dataTransfer.files ? event.dataTransfer.files[0] : null;
+              this.processFile(file);
+          },
+
+          processFile(file) {
+              if (!file) return;
+
+              // 実際のCSVパースの代わりにデモデータをセット
+              this.fileSelected = true;
+              this.fileName = file.name || 'teams_import_202310.csv';
+              this.fileSize = file.size ? (file.size / 1024).toFixed(1) + ' KB' : '12.5 KB';
+
+              // プレビュー用ダミーデータ
+              this.previewData = [
+                  { name: '札幌支店 営業部', plan: 'standard', email: 'sapporo.mgr@example.com' },
+                  { name: '仙台支店 総務課', plan: 'light', email: 'sendai.admin@example.com' },
+                  { name: '横浜開発センター', plan: 'pro', email: 'yokohama.dev@example.com' },
+                  { name: '京都リサーチパーク', plan: 'standard', email: 'kyoto.lab@example.com' },
+                  { name: '神戸物流センター', plan: 'light', email: 'kobe.logi@example.com' },
+              ];
+
+              // 状態リセット
+              this.importCompleted = false;
+              this.logs = [];
+              this.progress = 0;
+          },
+
+          // インポート実行シミュレーション
+          startImport() {
+              this.importing = true;
+              this.logs = [];
+              this.progress = 0;
+
+              let step = 0;
+              const totalSteps = this.previewData.length;
+
+              const interval = setInterval(() => {
+                  if (step >= totalSteps) {
+                      clearInterval(interval);
+                      this.importing = false;
+                      this.importCompleted = true;
+                      this.logs.push({ type: 'info', message: 'インポート処理が完了しました。 (成功: 4, 失敗: 1)' });
+                      return;
+                  }
+
+                  const item = this.previewData[step];
+                  this.progress = Math.round(((step + 1) / totalSteps) * 100);
+
+                  // 擬似的なエラー発生 (3件目をエラーにする)
+                  if (step === 2) {
+                      this.logs.push({ type: 'error', message: `行 ${step + 2}: ${item.name} - メールアドレスが既に使用されています。` });
+                  } else {
+                      this.logs.push({ type: 'success', message: `行 ${step + 2}: ${item.name} - 登録成功 (ID: Team_${100 + step})` });
+                  }
+
+                  step++;
+              }, 800); // 0.8秒ごとに処理
+          }
+      }">
+
+    <!-- ▼▼▼ Mobile Header ▼▼▼ -->
+    <div class="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-30">
+        <div class="flex items-center gap-3">
+            <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <span class="font-bold text-lg text-gray-900">Gateway Admin</span>
+        </div>
+    </div>
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- ▼▼▼ Sidebar Navigation ▼▼▼ -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" x-transition.opacity
+             class="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" x-cloak></div>
+
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+               class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 flex flex-col">
+
+            <div class="h-16 flex items-center px-6 border-b border-gray-100">
+                <div class="flex items-center gap-2 text-indigo-600">
+                    <i class="fas fa-network-wired text-xl"></i>
+                    <span class="font-bold text-xl tracking-tight text-gray-900">Gateway <span class="text-indigo-600">Admin</span></span>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Main</p>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-chart-line w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    ダッシュボード
+                </a>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">Management</p>
+                <!-- Active Link -->
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg bg-indigo-50 text-indigo-700 group">
+                    <i class="fas fa-building w-5 text-center group-hover:text-indigo-600"></i>
+                    拠点・ユーザー管理
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-robot w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    Difyアプリ管理
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-file-invoice-dollar w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    利用状況・制限
+                </a>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">System</p>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-server w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    災害復旧 (DR)
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-100">
+                <div class="flex items-center gap-3">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=6366f1&color=fff" alt="Admin" class="h-9 w-9 rounded-full object-cover shadow-sm">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">Admin User</p>
+                        <p class="text-xs text-gray-500 truncate">admin@example.com</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ▼▼▼ Main Content Area ▼▼▼ -->
+        <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">CSV一括登録</h1>
+                    <p class="text-xs text-gray-500 mt-1">複数の拠点・ユーザーをまとめて登録します。</p>
+                </div>
+                <!-- Template Download Button -->
+                <a href="#" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-2">
+                    <i class="fas fa-download"></i> テンプレートCSVをダウンロード
+                </a>
+            </header>
+
+            <!-- Content -->
+            <main class="flex-1 overflow-y-auto p-4 lg:p-8">
+
+                <div class="max-w-4xl mx-auto space-y-8">
+
+                    <!-- ▼▼▼ 1. File Upload Area ▼▼▼ -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="p-6">
+                            <h2 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                                CSVファイルのアップロード
+                            </h2>
+
+                            <!-- Drop Zone -->
+                            <div class="relative border-2 border-dashed rounded-lg p-12 text-center transition-colors duration-200 ease-in-out"
+                                 :class="isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-gray-400'"
+                                 @dragover.prevent="isDragging = true"
+                                 @dragleave.prevent="isDragging = false"
+                                 @drop.prevent="handleDrop($event)">
+
+                                <input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".csv" @change="handleFileSelect($event)">
+
+                                <div class="space-y-2">
+                                    <div class="mx-auto h-12 w-12 text-gray-400">
+                                        <i class="fas fa-file-csv text-4xl"></i>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        <span class="font-medium text-indigo-600 hover:text-indigo-500">ファイルを選択</span>
+                                        するか、ここにドラッグ＆ドロップしてください
+                                    </div>
+                                    <p class="text-xs text-gray-500">CSV形式 (最大 5MB)</p>
+                                </div>
+                            </div>
+
+                            <!-- Selected File Info -->
+                            <div x-show="fileSelected" class="mt-4 flex items-center justify-between p-3 bg-indigo-50 rounded-lg border border-indigo-100" x-transition>
+                                <div class="flex items-center gap-3">
+                                    <i class="fas fa-file-alt text-indigo-500"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900" x-text="fileName"></p>
+                                        <p class="text-xs text-gray-500" x-text="fileSize"></p>
+                                    </div>
+                                </div>
+                                <button @click="fileSelected = false; previewData = []" class="text-gray-400 hover:text-red-500">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ▼▼▼ 2. Preview Area (Visible only when file selected) ▼▼▼ -->
+                    <div x-show="fileSelected && !importCompleted" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" x-transition>
+                        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                            <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                                <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                                インポートデータのプレビュー (先頭5件)
+                            </h2>
+                            <span class="text-xs text-gray-500">※APIキーは自動生成されます</span>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">拠点名</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">契約プラン</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">管理者Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <template x-for="(row, index) in previewData" :key="index">
+                                        <tr>
+                                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500" x-text="index + 1"></td>
+                                            <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900" x-text="row.name"></td>
+                                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                                      :class="{
+                                                          'bg-gray-100 text-gray-800': row.plan === 'light',
+                                                          'bg-blue-100 text-blue-800': row.plan === 'standard',
+                                                          'bg-purple-100 text-purple-800': row.plan === 'pro'
+                                                      }"
+                                                      x-text="row.plan.toUpperCase()">
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500" x-text="row.email"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+                            <button @click="startImport()"
+                                    :disabled="importing"
+                                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                                <i class="fas fa-file-import" x-show="!importing"></i>
+                                <i class="fas fa-circle-notch fa-spin" x-show="importing"></i>
+                                <span x-text="importing ? 'インポート中...' : 'インポート開始'"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ▼▼▼ 3. Progress & Logs (Visible during/after import) ▼▼▼ -->
+                    <div x-show="importing || logs.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" x-transition>
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                            <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                                <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
+                                処理ステータス
+                            </h2>
+                        </div>
+                        <div class="p-6">
+
+                            <!-- Progress Bar -->
+                            <div class="mb-6">
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-indigo-700">進行状況</span>
+                                    <span class="text-sm font-medium text-indigo-700" x-text="progress + '%'"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-out" :style="'width: ' + progress + '%'"></div>
+                                </div>
+                            </div>
+
+                            <!-- Log Console -->
+                            <div class="bg-gray-900 rounded-lg p-4 font-mono text-xs text-gray-300 h-64 overflow-y-auto custom-scrollbar">
+                                <template x-for="log in logs">
+                                    <div class="mb-1 flex items-start gap-2">
+                                        <span x-show="log.type === 'success'" class="text-green-400">[SUCCESS]</span>
+                                        <span x-show="log.type === 'error'" class="text-red-400">[ERROR]</span>
+                                        <span x-show="log.type === 'info'" class="text-blue-400">[INFO]</span>
+                                        <span x-text="log.message"></span>
+                                    </div>
+                                </template>
+                                <div x-show="importing" class="animate-pulse text-gray-500 mt-2">Processing...</div>
+                            </div>
+
+                            <!-- Completion Actions -->
+                            <div x-show="importCompleted" class="mt-6 flex justify-center gap-4">
+                                <button @click="window.location.href='admin_team_list.html'" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50">
+                                    一覧に戻る
+                                </button>
+                                <button @click="fileSelected = false; previewData = []; logs = []" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm">
+                                    続けてインポート
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+</body>
+</html>

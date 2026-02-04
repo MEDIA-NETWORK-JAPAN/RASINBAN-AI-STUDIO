@@ -1,0 +1,287 @@
+<!--
+================================================================================
+【画面名称】管理者用 ダッシュボード (Admin Dashboard)
+【ファイル名】admin_dashboard.html
+
+【概要】
+システム全体の稼働状況、契約拠点数、API利用量などを俯瞰するためのメイン画面です。
+管理者がログイン後に最初にアクセスする画面となります。
+
+【主な機能】
+1. サイドバーナビゲーション
+   - システム内の各管理機能（拠点管理、アプリ管理、ログ等）への遷移リンク
+   - モバイル対応（レスポンシブデザイン）
+2. KPIカード（概要ステータス）
+   - 契約拠点数（前月比表示付き）
+   - 当月の総リクエスト数（システム全体のリミットに対する進捗）
+   - 稼働中のDifyアプリ数
+3. 利用率の高い拠点一覧
+   - リクエスト上限に近づいている拠点をリストアップ
+   - 視覚的なプログレスバーによる利用率表示
+   - 詳細編集画面へのクイックリンク
+
+【使用ライブラリ (CDN)】
+- Tailwind CSS (スタイリング)
+- Alpine.js (サイドバー開閉などのUI制御)
+- FontAwesome (アイコン)
+================================================================================
+-->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dify Gateway Admin Dashboard</title>
+
+    <!-- Tailwind CSS (Preview Only) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Alpine.js (Preview Only: For interactive components) -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- Google Fonts: Noto Sans JP -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<!--
+    x-data: ページ全体の状態管理
+    - sidebarOpen: モバイル時のサイドバー開閉フラグ
+    - profileOpen: プロフィールメニューの開閉フラグ（現在はプレースホルダー）
+-->
+<body class="bg-gray-50 text-gray-800 antialiased" x-data="{ sidebarOpen: false, profileOpen: false }">
+
+    <!-- ▼▼▼ Mobile Header (スマホ用ヘッダー) ▼▼▼ -->
+    <div class="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-30">
+        <div class="flex items-center gap-3">
+            <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <span class="font-bold text-lg tracking-tight text-gray-900">Gateway Admin</span>
+        </div>
+        <!-- Mobile Profile Icon -->
+        <div class="relative">
+            <button @click="profileOpen = !profileOpen" class="flex items-center focus:outline-none">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=6366f1&color=fff" alt="Admin" class="h-8 w-8 rounded-full object-cover shadow-sm">
+            </button>
+        </div>
+    </div>
+    <!-- ▲▲▲ Mobile Header End ▲▲▲ -->
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- ▼▼▼ Sidebar Navigation (サイドバーエリア) ▼▼▼ -->
+
+        <!-- Overlay for mobile (サイドバーが開いている時の背景) -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" x-transition.opacity
+             class="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" x-cloak></div>
+
+        <!-- Sidebar Content -->
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+               class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 flex flex-col">
+
+            <!-- Logo Area -->
+            <div class="h-16 flex items-center px-6 border-b border-gray-100">
+                <div class="flex items-center gap-2 text-indigo-600">
+                    <i class="fas fa-network-wired text-xl"></i>
+                    <span class="font-bold text-xl tracking-tight text-gray-900">Gateway <span class="text-indigo-600">Admin</span></span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Main</p>
+
+                <!-- Active Link Style (ダッシュボード) -->
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg bg-indigo-50 text-indigo-700 group">
+                    <i class="fas fa-chart-line w-5 text-center group-hover:text-indigo-600"></i>
+                    ダッシュボード
+                </a>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">Management</p>
+
+                <!-- Inactive Link Style -->
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-building w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    拠点・ユーザー管理
+                </a>
+
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-robot w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    Difyアプリ管理
+                </a>
+
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-file-invoice-dollar w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    利用状況・制限
+                </a>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">System</p>
+
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-server w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    災害復旧 (DR)
+                </a>
+            </nav>
+
+            <!-- User Profile (Desktop Bottom) -->
+            <div class="p-4 border-t border-gray-100">
+                <div class="flex items-center gap-3">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=6366f1&color=fff" alt="Admin" class="h-9 w-9 rounded-full object-cover shadow-sm">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">Admin User</p>
+                        <p class="text-xs text-gray-500 truncate">admin@example.com</p>
+                    </div>
+                    <a href="#" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+        <!-- ▲▲▲ Sidebar End ▲▲▲ -->
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+
+            <!-- ▼▼▼ Desktop Header (PC用ヘッダー) ▼▼▼ -->
+            <header class="hidden lg:flex items-center justify-between bg-white border-b border-gray-200 px-8 py-4">
+                <h1 class="text-xl font-bold text-gray-800">ダッシュボード</h1>
+
+                <div class="flex items-center gap-4">
+                    <button class="relative p-2 text-gray-400 hover:text-gray-500">
+                        <span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border border-white"></span>
+                        <i class="far fa-bell text-lg"></i>
+                    </button>
+                </div>
+            </header>
+            <!-- ▲▲▲ Desktop Header End ▲▲▲ -->
+
+            <!-- Main Scrollable Content -->
+            <main class="flex-1 overflow-y-auto p-4 lg:p-8">
+
+                <!-- ▼▼▼ Dashboard Overview (KPIカードエリア) ▼▼▼ -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+                    <!-- Card 1: 契約拠点数 -->
+                    <div class="bg-white rounded-xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-500">契約拠点数</h3>
+                            <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                                <i class="fas fa-building"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-bold text-gray-900">12</span>
+                            <span class="text-sm text-green-600 font-medium"><i class="fas fa-arrow-up text-xs"></i> 2拠点</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">前月比</p>
+                    </div>
+
+                    <!-- Card 2: 今月の総リクエスト数 -->
+                    <div class="bg-white rounded-xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-500">今月の総リクエスト</h3>
+                            <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-bold text-gray-900">45,280</span>
+                            <span class="text-sm text-gray-500">/ 100k Limit</span>
+                        </div>
+                        <!-- Simple Progress Bar -->
+                        <div class="w-full bg-gray-100 rounded-full h-1.5 mt-3">
+                            <div class="bg-blue-500 h-1.5 rounded-full" style="width: 45%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: 稼働Difyアプリ数 -->
+                    <div class="bg-white rounded-xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-500">稼働Difyアプリ</h3>
+                            <div class="p-2 bg-green-50 rounded-lg text-green-600">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-bold text-gray-900">5</span>
+                            <span class="text-sm text-gray-400">Apps</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">全システム正常稼働中</p>
+                    </div>
+                </div>
+                <!-- ▲▲▲ Overview End ▲▲▲ -->
+
+                <!-- ▼▼▼ Usage Table (利用率の高い拠点一覧) ▼▼▼ -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <h2 class="text-base font-bold text-gray-800">利用率の高い拠点一覧</h2>
+                        <a href="#" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">すべて見る &rarr;</a>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3 font-medium">拠点名</th>
+                                    <th class="px-6 py-3 font-medium">プラン</th>
+                                    <th class="px-6 py-3 font-medium">利用率</th>
+                                    <th class="px-6 py-3 text-right">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <!-- Row 1: High Usage -->
+                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="px-6 py-4 font-medium text-gray-900">東京本社 営業部</td>
+                                    <td class="px-6 py-4 text-gray-500">Standard</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-semibold text-red-600">92%</span>
+                                            <div class="w-24 bg-gray-100 rounded-full h-1.5">
+                                                <div class="bg-red-500 h-1.5 rounded-full" style="width: 92%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button class="text-gray-400 hover:text-indigo-600 transition-colors">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- Row 2: Normal Usage -->
+                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="px-6 py-4 font-medium text-gray-900">大阪支店 カスタマーサポート</td>
+                                    <td class="px-6 py-4 text-gray-500">Light</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-semibold text-gray-600">45%</span>
+                                            <div class="w-24 bg-gray-100 rounded-full h-1.5">
+                                                <div class="bg-indigo-500 h-1.5 rounded-full" style="width: 45%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button class="text-gray-400 hover:text-indigo-600 transition-colors">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- ▲▲▲ Usage Table End ▲▲▲ -->
+
+            </main>
+        </div>
+    </div>
+</body>
+</html>

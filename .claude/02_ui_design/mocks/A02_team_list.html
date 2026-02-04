@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+【画面名称】管理者用 拠点一覧・検索画面 (Admin Team List)
+【ファイル名】admin_team_list.html
+
+【概要】
+登録されているすべての拠点（チーム）を一覧表示し、検索・フィルタリングを行う画面です。
+
+【修正内容】
+- **テーブル行クリック時の挙動を「詳細画面 (admin_team_detail.html) への遷移」に変更**
+- 編集用モーダル機能を廃止し、モーダルは「新規登録専用」に簡素化
+- 拠点名だけでなく行全体をクリック可能エリアとして設定
+
+【主な機能】
+1. 検索・フィルタバー
+   - キーワード検索、制限超過フィルタ、プランフィルタ
+2. データテーブル
+   - 行全体がリンク（詳細画面へ遷移）
+   - 契約プラン、API利用率、管理者、最終アクセス
+3. 新規拠点登録モーダル
+   - チーム名、プラン入力
+   - APIキーの自動生成機能
+
+【使用ライブラリ (CDN)】
+- Tailwind CSS (v3.4)
+- Alpine.js
+- FontAwesome
+================================================================================
+-->
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team List - Dify Gateway</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        [x-cloak] { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* 行クリック用のカーソルスタイル */
+        .clickable-row { cursor: pointer; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased"
+      x-data="{
+          sidebarOpen: false,
+          createModalOpen: false,
+          filterOverLimit: false,
+          newApiKey: '',
+
+          // APIキー生成 (新規登録用)
+          generateApiKey() {
+              this.newApiKey = 'demo_key_' + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+          },
+
+          // 詳細画面へ遷移
+          goToDetail(id) {
+              // 実際の実装ではIDを使って遷移先URLを動的に生成します
+              // window.location.href = `/admin/teams/${id}`;
+              window.location.href = 'admin_team_detail.html';
+          }
+      }">
+
+    <!-- ▼▼▼ Mobile Header ▼▼▼ -->
+    <div class="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-30">
+        <div class="flex items-center gap-3">
+            <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <span class="font-bold text-lg text-gray-900">Gateway Admin</span>
+        </div>
+    </div>
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- ▼▼▼ Sidebar Navigation ▼▼▼ -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" x-transition.opacity
+             class="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" x-cloak></div>
+
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+               class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 flex flex-col">
+
+            <div class="h-16 flex items-center px-6 border-b border-gray-100">
+                <div class="flex items-center gap-2 text-indigo-600">
+                    <i class="fas fa-network-wired text-xl"></i>
+                    <span class="font-bold text-xl tracking-tight text-gray-900">Gateway <span class="text-indigo-600">Admin</span></span>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Main</p>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-chart-line w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    ダッシュボード
+                </a>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">Management</p>
+                <!-- Active Link -->
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg bg-indigo-50 text-indigo-700 group">
+                    <i class="fas fa-building w-5 text-center group-hover:text-indigo-600"></i>
+                    拠点・ユーザー管理
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-robot w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    Difyアプリ管理
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-file-invoice-dollar w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    利用状況・制限
+                </a>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">System</p>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-server w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    災害復旧 (DR)
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-100">
+                <div class="flex items-center gap-3">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=6366f1&color=fff" alt="Admin" class="h-9 w-9 rounded-full object-cover shadow-sm">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">Admin User</p>
+                        <p class="text-xs text-gray-500 truncate">admin@example.com</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ▼▼▼ Main Content Area ▼▼▼ -->
+        <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
+                <h1 class="text-xl font-bold text-gray-800">拠点・ユーザー管理</h1>
+                <!-- Trigger: New Team Modal -->
+                <button @click="generateApiKey(); createModalOpen = true" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-indigo-700 flex items-center gap-2">
+                    <i class="fas fa-plus"></i> 新規拠点登録
+                </button>
+            </header>
+
+            <!-- Content -->
+            <main class="flex-1 overflow-y-auto p-4 lg:p-8">
+
+                <div class="space-y-6">
+
+                    <!-- ▼▼▼ Filter & Search Bar ▼▼▼ -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                        <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+
+                            <!-- Left: Search Input -->
+                            <div class="relative w-full md:w-96">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input type="text" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="拠点名、担当者名で検索...">
+                            </div>
+
+                            <!-- Right: Filters -->
+                            <div class="flex gap-3 w-full md:w-auto items-center overflow-x-auto pb-1 md:pb-0">
+
+                                <!-- Over Limit Filter (Toggle) -->
+                                <label class="flex items-center cursor-pointer select-none bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+                                    <div class="relative">
+                                        <input type="checkbox" class="sr-only" x-model="filterOverLimit">
+                                        <div class="block bg-gray-300 w-8 h-5 rounded-full" :class="{ 'bg-red-500': filterOverLimit }"></div>
+                                        <div class="dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition" :class="{ 'transform translate-x-3': filterOverLimit }"></div>
+                                    </div>
+                                    <div class="ml-2 text-sm font-medium text-gray-700 flex items-center gap-1">
+                                        <i class="fas fa-exclamation-triangle text-red-500" x-show="filterOverLimit"></i>
+                                        制限超過のみ表示
+                                    </div>
+                                </label>
+
+                                <!-- Plan Filter -->
+                                <div class="relative">
+                                    <select class="appearance-none block w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700 cursor-pointer">
+                                        <option>全てのプラン</option>
+                                        <option>Light Plan</option>
+                                        <option>Standard Plan</option>
+                                        <option>Pro Plan</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                        <i class="fas fa-chevron-down text-xs"></i>
+                                    </div>
+                                </div>
+
+                                <button class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm border border-gray-200" title="条件リセット">
+                                    <i class="fas fa-undo-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ▼▼▼ Data Table ▼▼▼ -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            拠点名
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            プラン / 利用率
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            管理者
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            最終アクセス
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+
+                                    <!-- Row 1: Normal -->
+                                    <tr class="hover:bg-gray-50 transition-colors clickable-row group" @click="goToDetail(1)">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-indigo-100 rounded-lg text-indigo-600 group-hover:bg-indigo-200 transition-colors">
+                                                    <i class="fas fa-building"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">東京本社 営業部</div>
+                                                    <div class="text-xs text-gray-500">ID: Team_001</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="w-48">
+                                                <div class="flex justify-between items-end mb-1">
+                                                    <span class="text-xs font-bold text-gray-700">Standard</span>
+                                                    <span class="text-xs text-gray-500">92,000 / 100k</span>
+                                                </div>
+                                                <div class="w-full bg-gray-100 rounded-full h-2">
+                                                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 92%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="h-6 w-6 rounded-full bg-gray-200 overflow-hidden">
+                                                    <img src="https://ui-avatars.com/api/?name=Taro+Tanaka" alt="">
+                                                </div>
+                                                <div class="ml-2 text-sm text-gray-500">田中 太郎</div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            2分前
+                                        </td>
+                                    </tr>
+
+                                    <!-- Row 2: Over Limit (Red) -->
+                                    <tr class="bg-red-50 hover:bg-red-100 transition-colors border-l-4 border-red-500 clickable-row group" @click="goToDetail(2)">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-red-100 rounded-lg text-red-600 group-hover:bg-red-200 transition-colors">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-bold text-gray-900 group-hover:text-red-800 transition-colors">大阪支店 開発部</div>
+                                                    <div class="text-xs text-red-600 font-medium">(制限超過)</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="w-48">
+                                                <div class="flex justify-between items-end mb-1">
+                                                    <span class="text-xs font-bold text-gray-700">Light</span>
+                                                    <span class="text-xs text-red-600 font-bold">30,050 / 30k</span>
+                                                </div>
+                                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-red-600 h-2 rounded-full" style="width: 100%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="h-6 w-6 rounded-full bg-red-200 overflow-hidden border border-red-300">
+                                                    <img src="https://ui-avatars.com/api/?name=Jiro+Suzuki" alt="">
+                                                </div>
+                                                <div class="ml-2 text-sm text-gray-700">鈴木 次郎</div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            1日前
+                                        </td>
+                                    </tr>
+
+                                    <!-- Row 3: Normal -->
+                                    <tr class="hover:bg-gray-50 transition-colors clickable-row group" @click="goToDetail(3)">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-indigo-100 rounded-lg text-indigo-600 group-hover:bg-indigo-200 transition-colors">
+                                                    <i class="fas fa-building"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">名古屋営業所</div>
+                                                    <div class="text-xs text-gray-500">ID: Team_003</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="w-48">
+                                                <div class="flex justify-between items-end mb-1">
+                                                    <span class="text-xs font-bold text-gray-700">Pro</span>
+                                                    <span class="text-xs text-gray-500">120k / 500k</span>
+                                                </div>
+                                                <div class="w-full bg-gray-100 rounded-full h-2">
+                                                    <div class="bg-green-500 h-2 rounded-full" style="width: 24%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="h-6 w-6 rounded-full bg-gray-200 overflow-hidden">
+                                                    <img src="https://ui-avatars.com/api/?name=Hanako+Sato" alt="">
+                                                </div>
+                                                <div class="ml-2 text-sm text-gray-500">佐藤 花子</div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            3時間前
+                                        </td>
+                                    </tr>
+
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- ▼▼▼ Pagination ▼▼▼ -->
+                        <div class="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        全 <span class="font-medium">3</span> 件中 <span class="font-medium">1</span> から <span class="font-medium">3</span> 件を表示
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Previous</span>
+                                            <i class="fas fa-chevron-left text-xs"></i>
+                                        </a>
+                                        <a href="#" aria-current="page" class="z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                            1
+                                        </a>
+                                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Next</span>
+                                            <i class="fas fa-chevron-right text-xs"></i>
+                                        </a>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!--
+    ============================================================================
+    ▼▼▼ Component: Create Team Modal (新規拠点登録専用モーダル) ▼▼▼
+
+    [概要]
+    新しい拠点を追加するためのモーダル。
+    x-show="createModalOpen" で制御。
+
+    [入力項目]
+    - チーム名 (必須)
+    - 契約プラン (必須)
+    - 拠点接続用APIキー (自動生成)
+    ============================================================================
+    -->
+    <div x-show="createModalOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak>
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Overlay -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="createModalOpen = false" x-transition.opacity></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <!-- Modal Panel -->
+            <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fas fa-plus text-indigo-600"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">新規拠点（チーム）の登録</h3>
+                            <div class="mt-4 space-y-4">
+                                <!-- Team Name -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">拠点名 <span class="text-red-500">*</span></label>
+                                    <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3" placeholder="例: 福岡営業所">
+                                </div>
+
+                                <!-- Plan Selection -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">初期契約プラン <span class="text-red-500">*</span></label>
+                                    <select class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3 bg-white">
+                                        <option value="light">Light Plan (30k req/mo)</option>
+                                        <option value="standard" selected>Standard Plan (100k req/mo)</option>
+                                        <option value="pro">Pro Plan (500k req/mo)</option>
+                                    </select>
+                                </div>
+
+                                <!-- API Key Generation -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">拠点接続用APIキー <span class="text-red-500">*</span></label>
+                                    <div class="mt-1 flex rounded-md shadow-sm">
+                                        <div class="relative flex-grow focus-within:z-10">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-key text-gray-400"></i>
+                                            </div>
+                                            <input type="text" x-model="newApiKey" readonly
+                                                   class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md pl-10 sm:text-sm border-gray-300 bg-gray-50 font-mono text-gray-600 cursor-not-allowed">
+                                        </div>
+                                        <button @click="generateApiKey()" type="button" class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" title="キーを再生成">
+                                            <i class="fas fa-sync-alt text-gray-500"></i>
+                                            <span>再生成</span>
+                                        </button>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500">※自動生成されたセキュアなキーです。登録後も詳細画面で確認可能です。</p>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button @click="createModalOpen = false" type="button" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                        登録する
+                    </button>
+                    <button @click="createModalOpen = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        キャンセル
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ▲▲▲ Create Modal End ▲▲▲ -->
+
+</body>
+</html>

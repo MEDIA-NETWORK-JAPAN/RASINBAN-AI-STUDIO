@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+【画面名称】管理者用 災害復旧 (DR) エクスポート画面 (Admin DR Export)
+【ファイル名】admin_dr_export.html (A09)
+
+【概要】
+システム障害時に備え、現在の全拠点・ユーザー・APIキー設定を
+復旧用Seeder (OnPremiseSetupSeeder) で利用可能なJSON形式でエクスポートする画面です。
+
+【主な機能】
+1. エクスポート実行
+   - データ収集とJSON生成のプロセスをシミュレーション
+   - プログレスバーによる進捗表示
+2. 生成データ確認
+   - 生成されたJSONのプレビュー表示
+   - ファイルサイズ、レコード数の表示
+3. ダウンロード
+   - teams.json のダウンロードアクション
+
+【使用ライブラリ (CDN)】
+- Tailwind CSS (v3.4)
+- Alpine.js
+- FontAwesome
+================================================================================
+-->
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DR Export - Dify Gateway</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        [x-cloak] { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Code Block Styling */
+        pre { font-family: 'Menlo', 'Monaco', 'Courier New', monospace; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased"
+      x-data="{
+          sidebarOpen: false,
+          generating: false,
+          completed: false,
+          progress: 0,
+
+          // モックJSONデータ
+          jsonData: '',
+
+          // 生成プロセス開始
+          startExport() {
+              this.generating = true;
+              this.completed = false;
+              this.progress = 0;
+              this.jsonData = '';
+
+              // プログレスバーのアニメーション
+              const interval = setInterval(() => {
+                  this.progress += Math.floor(Math.random() * 15) + 5;
+                  if (this.progress >= 100) {
+                      this.progress = 100;
+                      clearInterval(interval);
+
+                      // 完了処理 (少し待ってから表示)
+                      setTimeout(() => {
+                          this.generating = false;
+                          this.completed = true;
+                          this.setMockData();
+                      }, 500);
+                  }
+              }, 300);
+          },
+
+          // 完了時に表示するJSONデータ
+          setMockData() {
+              const mock = [
+                  {
+                      'team_name': '東京本社 営業部',
+                      'plan': 'standard',
+                      'api_key_plain': 'demo_key_v8a9s8d7...',
+                      'users': [
+                          { 'name': '田中 太郎', 'email': 'taro.tanaka@example.com', 'role': 'admin' },
+                          { 'name': '鈴木 一郎', 'email': 'ichiro.suzuki@example.com', 'role': 'member' }
+                      ]
+                  },
+                  {
+                      'team_name': '大阪支店 開発部',
+                      'plan': 'light',
+                      'api_key_plain': 'demo_key_x9z8y7...',
+                      'users': [
+                          { 'name': '山田 花子', 'email': 'hanako.yamada@example.com', 'role': 'admin' }
+                      ]
+                  }
+              ];
+              this.jsonData = JSON.stringify(mock, null, 4);
+          }
+      }">
+
+    <!-- ▼▼▼ Mobile Header ▼▼▼ -->
+    <div class="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-30">
+        <div class="flex items-center gap-3">
+            <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <span class="font-bold text-lg text-gray-900">Gateway Admin</span>
+        </div>
+    </div>
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- ▼▼▼ Sidebar Navigation ▼▼▼ -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" x-transition.opacity
+             class="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" x-cloak></div>
+
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+               class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 flex flex-col">
+
+            <div class="h-16 flex items-center px-6 border-b border-gray-100">
+                <div class="flex items-center gap-2 text-indigo-600">
+                    <i class="fas fa-network-wired text-xl"></i>
+                    <span class="font-bold text-xl tracking-tight text-gray-900">Gateway <span class="text-indigo-600">Admin</span></span>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Main</p>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-chart-line w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    ダッシュボード
+                </a>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">Management</p>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-building w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    拠点・ユーザー管理
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-robot w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    Difyアプリ管理
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-file-invoice-dollar w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    利用状況・制限
+                </a>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">System</p>
+                <!-- Active Link -->
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg bg-indigo-50 text-indigo-700 group">
+                    <i class="fas fa-server w-5 text-center group-hover:text-indigo-600"></i>
+                    災害復旧 (DR)
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-100">
+                <div class="flex items-center gap-3">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=6366f1&color=fff" alt="Admin" class="h-9 w-9 rounded-full object-cover shadow-sm">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">Admin User</p>
+                        <p class="text-xs text-gray-500 truncate">admin@example.com</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ▼▼▼ Main Content Area ▼▼▼ -->
+        <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">災害復旧 (DR) エクスポート</h1>
+                    <p class="text-xs text-gray-500 mt-1">システム復旧用の構成データをバックアップします。</p>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <main class="flex-1 overflow-y-auto p-4 lg:p-8">
+
+                <div class="max-w-4xl mx-auto space-y-8">
+
+                    <!-- 1. Explanation Card -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-start gap-4">
+                                <div class="flex-shrink-0">
+                                    <span class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600">
+                                        <i class="fas fa-database text-xl"></i>
+                                    </span>
+                                </div>
+                                <div>
+                                    <h2 class="text-lg font-bold text-gray-900">システム構成のエクスポート</h2>
+                                    <p class="mt-2 text-sm text-gray-600 leading-relaxed">
+                                        現在のデータベースに登録されている「拠点情報」「ユーザー」「APIキー設定」をJSON形式で出力します。<br>
+                                        このファイルは、システムの完全復旧（Disaster Recovery）時に <code>OnPremiseSetupSeeder</code> で使用されます。
+                                    </p>
+
+                                    <div class="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-md">
+                                        <div class="flex">
+                                            <div class="flex-shrink-0">
+                                                <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <p class="text-sm text-yellow-700 font-bold">取扱注意</p>
+                                                <p class="text-sm text-yellow-700 mt-1">
+                                                    出力されるJSONファイルには、<strong>拠点接続用のAPIキーが含まれます。</strong><br>
+                                                    ダウンロード後は、アクセス制限のかかった安全な場所に保管してください。
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end">
+                            <button @click="startExport()"
+                                    :disabled="generating"
+                                    class="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                <i class="fas fa-file-export mr-2" x-show="!generating"></i>
+                                <i class="fas fa-circle-notch fa-spin mr-2" x-show="generating"></i>
+                                <span x-text="generating ? '生成中...' : 'バックアップデータを生成'"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Processing Status (Visible when generating) -->
+                    <div x-show="generating" class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center" x-transition>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">データを収集中...</h3>
+                        <p class="text-sm text-gray-500 mb-6">データベースから情報を抽出し、JSONファイルを構築しています。</p>
+
+                        <div class="w-full bg-gray-200 rounded-full h-4 mb-2 overflow-hidden">
+                            <div class="bg-indigo-600 h-4 rounded-full transition-all duration-300 ease-out"
+                                 :style="'width: ' + progress + '%'"></div>
+                        </div>
+                        <p class="text-xs text-gray-400 font-mono text-right" x-text="progress + '%'"></p>
+                    </div>
+
+                    <!-- 3. Result & Download (Visible when completed) -->
+                    <div x-show="completed" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" x-transition>
+                        <div class="px-6 py-4 border-b border-gray-100 bg-green-50 flex items-center justify-between">
+                            <h2 class="text-base font-bold text-green-800 flex items-center gap-2">
+                                <i class="fas fa-check-circle text-green-600"></i> 生成完了
+                            </h2>
+                            <span class="text-xs text-green-700 font-medium">teams.json (24KB)</span>
+                        </div>
+
+                        <div class="p-6">
+                            <p class="text-sm text-gray-600 mb-4">以下の内容でJSONファイルが生成されました。内容を確認の上、ダウンロードしてください。</p>
+
+                            <!-- JSON Preview -->
+                            <div class="relative bg-gray-900 rounded-lg p-4 mb-6 group">
+                                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button class="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded hover:bg-gray-600">Copy</button>
+                                </div>
+                                <pre class="text-xs text-green-400 overflow-x-auto custom-scrollbar h-64" x-text="jsonData"></pre>
+                            </div>
+
+                            <div class="flex justify-center">
+                                <button class="inline-flex items-center px-8 py-4 border border-transparent text-base font-bold rounded-lg shadow-md text-white bg-green-600 hover:bg-green-700 focus:outline-none transition-transform hover:-translate-y-0.5">
+                                    <i class="fas fa-download mr-2"></i> teams.json をダウンロード
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+</body>
+</html>

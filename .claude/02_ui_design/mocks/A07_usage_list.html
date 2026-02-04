@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+【画面名称】管理者用 利用状況一覧・修正画面 (Admin Usage List)
+【ファイル名】admin_usage_list.html (A07)
+
+【概要】
+月次のAPI利用実績データ(monthly_api_usages)を一覧表示する画面です。
+
+【修正内容】
+- **ファイル内にあった「利用回数修正モーダル」のコードを完全に削除**
+- 「修正」ボタンを `admin_usage_edit_modal.html` へのリンクに変更
+- Alpine.jsのデータ構造を簡素化
+
+【主な機能】
+1. 検索・フィルタ
+   - 対象年月、拠点名、Difyアプリ
+   - 制限超過フィルタ (Over Limit Only)
+   - リアルタイムフィルタリング
+2. 実績データテーブル
+   - 年月、拠点、プラン
+   - 利用状況（実績 / 上限 + プログレスバー）
+   - 最終更新日時
+   - **修正ボタン（別ファイルへ遷移）**
+
+【使用ライブラリ (CDN)】
+- Tailwind CSS (v3.4)
+- Alpine.js
+- FontAwesome
+================================================================================
+-->
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage Logs - Dify Gateway</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        [x-cloak] { display: none !important; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased"
+      x-data="{
+          sidebarOpen: false,
+
+          // フィルタ条件
+          filters: {
+              month: '2023-10',
+              team: '',
+              app: 'All',
+              overLimitOnly: false
+          },
+
+          // モックデータ (初期表示用)
+          usages: [
+              { id: 1, month: '2023-10', team: '東京本社 営業部', plan: 'Standard Plan', app: 'カスタマーサポートBot', appIcon: 'fa-robot', appColor: 'indigo', count: 45280, limit: 100000, updatedAt: '2023-10-25 14:30' },
+              { id: 2, month: '2023-10', team: '東京本社 営業部', plan: 'Standard Plan', app: '日報要約ジェネレーター', appIcon: 'fa-file-alt', appColor: 'purple', count: 12450, limit: 100000, updatedAt: '2023-10-25 12:15' },
+              { id: 3, month: '2023-10', team: '大阪支店 開発部', plan: 'Light Plan', app: 'カスタマーサポートBot', appIcon: 'fa-robot', appColor: 'indigo', count: 30050, limit: 30000, updatedAt: '2023-10-24 09:00' },
+              { id: 4, month: '2023-10', team: '名古屋営業所', plan: 'Pro Plan', app: '社内QA検索', appIcon: 'fa-search', appColor: 'green', count: 120500, limit: 500000, updatedAt: '2023-10-25 10:00' },
+              { id: 5, month: '2023-09', team: '福岡支店', plan: 'Light Plan', app: '日報要約ジェネレーター', appIcon: 'fa-file-alt', appColor: 'purple', count: 28000, limit: 30000, updatedAt: '2023-09-30 23:59' },
+          ],
+
+          // フィルタリング済みデータ (Getter)
+          get filteredUsages() {
+              return this.usages.filter(u => {
+                  // 年月フィルタ
+                  if (this.filters.month && u.month !== this.filters.month) return false;
+                  // 拠点名フィルタ (部分一致)
+                  if (this.filters.team && !u.team.includes(this.filters.team)) return false;
+                  // アプリ名フィルタ
+                  if (this.filters.app !== 'All' && !u.app.includes(this.filters.app)) return false;
+                  // 制限超過フィルタ
+                  if (this.filters.overLimitOnly && u.count <= u.limit) return false;
+
+                  return true;
+              });
+          },
+
+          // 利用率計算
+          getPercentage(count, limit) {
+              if (!limit) return 0;
+              return Math.min(100, Math.round((count / limit) * 100));
+          },
+
+          // プログレスバーの色
+          getProgressColor(count, limit) {
+              const pct = (count / limit) * 100;
+              if (pct > 100) return 'bg-red-600';
+              if (pct > 90) return 'bg-yellow-500';
+              return 'bg-blue-500';
+          }
+      }">
+
+    <!-- ▼▼▼ Mobile Header ▼▼▼ -->
+    <div class="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-30">
+        <div class="flex items-center gap-3">
+            <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <span class="font-bold text-lg text-gray-900">Gateway Admin</span>
+        </div>
+    </div>
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- ▼▼▼ Sidebar Navigation ▼▼▼ -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" x-transition.opacity
+             class="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" x-cloak></div>
+
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+               class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 flex flex-col">
+
+            <div class="h-16 flex items-center px-6 border-b border-gray-100">
+                <div class="flex items-center gap-2 text-indigo-600">
+                    <i class="fas fa-network-wired text-xl"></i>
+                    <span class="font-bold text-xl tracking-tight text-gray-900">Gateway <span class="text-indigo-600">Admin</span></span>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Main</p>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-chart-line w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    ダッシュボード
+                </a>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">Management</p>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-building w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    拠点・ユーザー管理
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-robot w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    Difyアプリ管理
+                </a>
+                <!-- Active Link -->
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg bg-indigo-50 text-indigo-700 group">
+                    <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:text-indigo-600"></i>
+                    利用状況・制限
+                </a>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">System</p>
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 group transition-colors">
+                    <i class="fas fa-server w-5 text-center text-gray-400 group-hover:text-gray-600"></i>
+                    災害復旧 (DR)
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-100">
+                <div class="flex items-center gap-3">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=6366f1&color=fff" alt="Admin" class="h-9 w-9 rounded-full object-cover shadow-sm">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">Admin User</p>
+                        <p class="text-xs text-gray-500 truncate">admin@example.com</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ▼▼▼ Main Content Area ▼▼▼ -->
+        <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+
+            <!-- Header -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">利用状況・実績管理</h1>
+                    <p class="text-xs text-gray-500 mt-1">各拠点の月次API利用回数を確認・修正します。</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="text-gray-400 hover:text-gray-600 p-2" title="再読み込み">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="text-indigo-600 hover:text-indigo-800 p-2 font-medium text-sm" title="CSVエクスポート">
+                        <i class="fas fa-download mr-1"></i> CSV出力
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <main class="flex-1 overflow-y-auto p-4 lg:p-8">
+
+                <div class="space-y-6">
+
+                    <!-- ▼▼▼ Filter Bar (Live Filter) ▼▼▼ -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+
+                            <!-- Month Filter -->
+                            <div class="col-span-1">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">対象年月</label>
+                                <input type="month" x-model="filters.month" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3">
+                            </div>
+
+                            <!-- Team Filter -->
+                            <div class="col-span-1">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">拠点名</label>
+                                <input type="text" x-model="filters.team" placeholder="拠点名で検索" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3">
+                            </div>
+
+                            <!-- App Filter -->
+                            <div class="col-span-1">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Difyアプリ</label>
+                                <select x-model="filters.app" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3 bg-white">
+                                    <option value="All">全てのアプリ</option>
+                                    <option value="カスタマーサポートBot">カスタマーサポートBot</option>
+                                    <option value="日報要約ジェネレーター">日報要約ジェネレーター</option>
+                                    <option value="社内QA検索">社内QA検索</option>
+                                </select>
+                            </div>
+
+                            <!-- Over Limit Toggle -->
+                            <div class="col-span-1 flex items-center justify-end pb-1">
+                                <label class="flex items-center cursor-pointer select-none bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors w-full justify-center md:w-auto md:justify-start">
+                                    <div class="relative">
+                                        <input type="checkbox" class="sr-only" x-model="filters.overLimitOnly">
+                                        <div class="block bg-gray-300 w-8 h-5 rounded-full" :class="{ 'bg-red-500': filters.overLimitOnly }"></div>
+                                        <div class="dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition" :class="{ 'transform translate-x-3': filters.overLimitOnly }"></div>
+                                    </div>
+                                    <div class="ml-2 text-sm font-medium text-gray-700 flex items-center gap-1">
+                                        <i class="fas fa-exclamation-triangle" :class="filters.overLimitOnly ? 'text-red-500' : 'text-gray-400'"></i>
+                                        制限超過のみ表示
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ▼▼▼ Usage Table (Reactive) ▼▼▼ -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            年月
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            拠点名 / プラン
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            利用アプリ
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
+                                            利用状況 (実績 / 上限)
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            最終更新
+                                        </th>
+                                        <th scope="col" class="relative px-6 py-3">
+                                            <span class="sr-only">Edit</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+
+                                    <!-- Rows Loop -->
+                                    <template x-for="usage in filteredUsages" :key="usage.id">
+                                        <tr class="hover:bg-gray-50 transition-colors" :class="{ 'bg-red-50 hover:bg-red-100': usage.count > usage.limit }">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono" x-text="usage.month"></td>
+
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900" x-text="usage.team"></div>
+                                                <div class="text-xs font-medium"
+                                                     :class="usage.count > usage.limit ? 'text-red-500' : 'text-gray-500'"
+                                                     x-text="usage.plan + (usage.count > usage.limit ? ' (超過)' : '')">
+                                                </div>
+                                            </td>
+
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <i class="fas mr-1" :class="[usage.appIcon, 'text-' + usage.appColor + '-400']"></i>
+                                                <span x-text="usage.app"></span>
+                                            </td>
+
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="w-full max-w-xs">
+                                                    <div class="flex justify-between items-end mb-1">
+                                                        <span class="text-sm font-bold"
+                                                              :class="usage.count > usage.limit ? 'text-red-600' : 'text-gray-900'"
+                                                              x-text="usage.count.toLocaleString()">
+                                                        </span>
+                                                        <span class="text-xs font-bold text-gray-500" x-text="'/ ' + usage.limit.toLocaleString()"></span>
+                                                    </div>
+                                                    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                                        <div class="h-2 rounded-full transition-all duration-500"
+                                                             :class="getProgressColor(usage.count, usage.limit)"
+                                                             :style="'width: ' + getPercentage(usage.count, usage.limit) + '%'">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="usage.updatedAt"></td>
+
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <!-- Link to Separate Modal File -->
+                                                <a href="admin_usage_edit_modal.html" class="inline-block text-indigo-600 hover:text-indigo-900 bg-white px-3 py-1 rounded-md text-xs border border-indigo-200 transition-colors hover:bg-indigo-50 shadow-sm">
+                                                    修正
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </template>
+
+                                    <!-- Empty State -->
+                                    <tr x-show="filteredUsages.length === 0">
+                                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                            <i class="fas fa-search mb-2 text-2xl text-gray-300"></i>
+                                            <p>条件に一致するデータは見つかりませんでした。</p>
+                                        </td>
+                                    </tr>
+
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagenation -->
+                        <div class="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+                            <div class="flex-1 flex justify-between sm:hidden">
+                                <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Previous</a>
+                                <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Next</a>
+                            </div>
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        全 <span class="font-medium" x-text="filteredUsages.length"></span> 件を表示中
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><span class="sr-only">Previous</span><i class="fas fa-chevron-left text-xs"></i></a>
+                                        <a href="#" aria-current="page" class="z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">1</a>
+                                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><span class="sr-only">Next</span><i class="fas fa-chevron-right text-xs"></i></a>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+</body>
+</html>
