@@ -179,6 +179,21 @@ php artisan test
 | 「コミットメッセージを提案して」 | `.claude/03_git_guidelines.md` の規約に従う |
 | 「ブランチを作成」 | `.claude/03_git_guidelines.md` の命名規則に従う |
 
+### テスト・品質保証の指示
+
+| 指示例 | 参照ドキュメント |
+|--------|-----------------|
+| 「画面の受入条件を確認」 | `.claude/01_development_docs/04_画面テストケース定義書.md` の「4. 受入条件」 |
+| 「画面テストケースを確認」 | `.claude/01_development_docs/04_画面テストケース定義書.md` の「5. テストケース一覧」 |
+| 「A01画面のテストを実装」 | `.claude/01_development_docs/04_画面テストケース定義書.md` で該当画面検索 |
+| 「コンポーネントの受入条件を確認」 | `.claude/01_development_docs/03_テストケース定義書.md` の「4. 受入条件」 |
+| 「コンポーネントテストケースを確認」 | `.claude/01_development_docs/03_テストケース定義書.md` の「5. テストケース一覧」 |
+| 「TC-XXXのテストを実装」 | `.claude/01_development_docs/03_テストケース定義書.md` で該当テストID検索 |
+| 「AC-XXXの受入条件は?」 | 画面AC: `04_画面テストケース定義書.md`、コンポーネントAC: `03_テストケース定義書.md` |
+| 「テスト実装順序は?」 | `.claude/01_development_docs/04_画面テストケース定義書.md` の「6. テスト実装優先度」 |
+| 「Feature Testの書き方」 | `.claude/01_development_docs/04_画面テストケース定義書.md` の「7. テスト実装ガイド」 |
+| 「コンポーネントテストの書き方」 | `.claude/01_development_docs/03_テストケース定義書.md` の「7. テスト実装ガイド」 |
+
 ### HTMLモックの参照
 
 実装時は対応するHTMLモックを必ず参照してください：
@@ -192,6 +207,8 @@ php artisan test
 |---------|-------------|------|
 | 要件定義 | `.claude/01_development_docs/01_要件定義書.md` | システム要件、機能要件 |
 | 機能一覧 | `.claude/01_development_docs/02_画面一覧・機能一覧定義書.md` | 画面・機能の詳細定義 |
+| コンポーネントテスト | `.claude/01_development_docs/03_テストケース定義書.md` | コンポーネント単体テストの受入条件とテストケース定義（約260ケース） |
+| 画面テスト | `.claude/01_development_docs/04_画面テストケース定義書.md` | 画面単位（Feature Test）の受入条件とテストケース定義（約130ケース） |
 | UI設計目次 | `.claude/02_ui_design/README.md` | UI設計ドキュメントの使い方 |
 | デザイントークン | `.claude/02_ui_design/_design_tokens.md` | Tailwind統一ルール |
 | コンポーネント | `.claude/02_ui_design/components/` | 共通UIコンポーネント仕様 |

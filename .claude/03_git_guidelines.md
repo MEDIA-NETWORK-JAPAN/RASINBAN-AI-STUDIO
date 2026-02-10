@@ -15,8 +15,6 @@
 
 【カテゴリ2】
 - 変更内容3
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 ```
 
 ### プレフィックス一覧
@@ -111,6 +109,6 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 
 ## AI（Claude）との協業時の注意
 
-- コミットメッセージにはAIが生成したことを示す `Co-Authored-By` を付与
+- コミットメッセージにはAIが生成したことを示す `Co-Authored-By` を付与を禁止します
 - AIに依頼する際は「コミットメッセージを提案して」と指示
 - AIが提案したメッセージは必要に応じて調整可能

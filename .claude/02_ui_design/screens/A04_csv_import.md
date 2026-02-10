@@ -40,14 +40,12 @@ CSVファイルをアップロードして複数の拠点・ユーザーを一�
 プレビューテーブル：
 | カラム | 内容 |
 |--------|------|
-| # | 行番号 |
-| 拠点名 | team_name |
-| プラン | plan |
-| オーナー名 | owner_name |
-| オーナーメール | owner_email |
-| ステータス | Valid/Error バッジ |
+| No | 行番号 (1から開始) |
+| 拠点名 | チーム名 |
+| 契約プラン | Light/Standard/Pro (バッジ表示) |
+| 管理者Email | オーナーメールアドレス |
 
-エラー行はハイライト表示 + エラー内容をツールチップで表示
+注記: ※APIキーは自動生成されます
 
 ### ステップ3: インポート実行
 
@@ -62,17 +60,17 @@ CSVファイルをアップロードして複数の拠点・ユーザーを一�
 ## CSVフォーマット
 
 ```csv
-team_name,plan,owner_name,owner_email
-東京本社 営業部,standard,田中 太郎,taro.tanaka@example.com
-大阪支店 開発部,light,山田 花子,hanako.yamada@example.com
+name,plan,email
+札幌支店 営業部,standard,sapporo.mgr@example.com
+仙台支店 総務課,light,sendai.admin@example.com
+横浜開発センター,pro,yokohama.dev@example.com
 ```
 
 | カラム | 必須 | 説明 |
 |--------|------|------|
-| team_name | Yes | 拠点名 |
+| name | Yes | 拠点名 |
 | plan | Yes | light/standard/pro |
-| owner_name | Yes | オーナー名 |
-| owner_email | Yes | オーナーメールアドレス |
+| email | Yes | 管理者メールアドレス |
 
 ## データ処理
 
@@ -151,7 +149,6 @@ public function import()
 
 | フィールド | ルール |
 |-----------|--------|
-| team_name | required, string, max:255 |
+| name | required, string, max:255 |
 | plan | required, in:light,standard,pro |
-| owner_name | required, string, max:255 |
-| owner_email | required, email, unique:users,email |
+| email | required, email, unique:teams,* (重複チェック) |

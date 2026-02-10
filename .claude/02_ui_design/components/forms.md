@@ -202,6 +202,7 @@ ON/OFF切り替えスイッチ。
       <label class="block text-xs font-medium text-gray-500 mb-1">検索</label>
       <div class="relative">
         <input type="text"
+               wire:model.live.debounce.300ms="search"
                placeholder="{{ $placeholder }}"
                class="block w-full pl-10 rounded-md border-gray-300 shadow-sm
                       focus:border-indigo-500 focus:ring-indigo-500
@@ -224,6 +225,19 @@ ON/OFF切り替えスイッチ。
   </div>
 </div>
 ```
+
+### Props
+
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| placeholder | string | No | - | 検索入力のプレースホルダー |
+| debounce | integer | No | 300 | デバウンス遅延時間（ミリ秒） |
+
+### Livewire連携
+
+- `wire:model.live.debounce.300ms` を使用して、入力後300ms待機してから検索を実行
+- パフォーマンス最適化のため、キーストロークごとに即座に検索せず、入力が落ち着いてから実行
+- デバウンス時間は変更可能（例: `debounce.500ms` で500ms待機）
 
 ### 使用モック
 - A02, A05, A07

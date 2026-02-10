@@ -33,22 +33,23 @@
 - タイトル: 「Difyアプリ管理」
 - アクションボタン: 新規登録
 
-### 2. 検索・フィルタバー
+### 2. 検索バー
 
 | フィールド | タイプ | 説明 |
 |-----------|--------|------|
-| アプリ名/Slug検索 | TextInput | 部分一致 |
-| ステータス | SelectInput | 全て/Active/Inactive |
+| アプリ名/Slug検索 | TextInput | 部分一致 (debounce 300ms) |
 
 ### 3. アプリ一覧テーブル
 
 | カラム | 内容 | 説明 |
 |--------|------|------|
-| アプリ名 | `name` + アイコン | アプリ識別名 |
-| Slug | `slug` | URLパス部分（monospace表示） |
-| エンドポイントタイプ | `endpoint_type` | chat/completion/workflow |
+| アプリ名 | `name` + アイコン | クリックでモーダル表示 |
+| スラッグ | `slug` | URLパス部分（monospace表示） |
+| 接続設定 | APIキー設定状態 | 緑チェックマーク表示 |
 | ステータス | ToggleSwitch | Active/Inactive切替 |
-| 操作 | 編集ボタン | A06へ遷移 |
+| 最終更新 | `updated_at` | 相対時刻表示 |
+
+注記: アプリ名クリックで詳細編集モーダルを開く（編集列は削除）
 
 ### 4. 新規登録モーダル
 
@@ -58,14 +59,12 @@
 | Slug | TextInput | Yes | URLパス（英数字、ハイフン） |
 | Dify APIキー | TextInput | Yes | Bearer token |
 | Difyエンドポイント | TextInput | Yes | Dify APIのURL |
-| タイプ | SelectInput | Yes | chat/completion/workflow |
 
 ## データ取得
 
 ```php
 // Livewire Component
 public $search = '';
-public $statusFilter = '';
 
 public function getAppsProperty()
 {
@@ -74,7 +73,6 @@ public function getAppsProperty()
             $q->where('name', 'like', "%{$this->search}%")
               ->orWhere('slug', 'like', "%{$this->search}%");
         }))
-        ->when($this->statusFilter !== '', fn($q) => $q->where('is_active', $this->statusFilter))
         ->orderBy('name')
         ->paginate(10);
 }
@@ -84,11 +82,11 @@ public function getAppsProperty()
 
 | 操作 | 動作 |
 |------|------|
-| 検索入力 | リアルタイムフィルタリング |
+| 検索入力 | リアルタイムフィルタリング (debounce 300ms) |
 | ステータストグル | 即時更新（確認なし） |
 | 新規登録ボタン | モーダル表示 |
 | モーダル保存 | DifyApp作成 → 一覧更新 |
-| 編集ボタン | A06へ遷移 |
+| アプリ名クリック | 詳細編集モーダル表示 |
 
 ## Livewire実装
 
@@ -99,7 +97,6 @@ class DifyAppList extends Component
     use WithPagination;
 
     public $search = '';
-    public $statusFilter = '';
 
     public $showCreateModal = false;
     public $newApp = [
@@ -107,7 +104,6 @@ class DifyAppList extends Component
         'slug' => '',
         'api_key' => '',
         'endpoint_url' => '',
-        'endpoint_type' => 'chat',
     ];
 
     public function toggleStatus(DifyApp $app)
@@ -126,7 +122,6 @@ class DifyAppList extends Component
             'newApp.slug' => 'required|string|max:100|regex:/^[a-z0-9-]+$/|unique:dify_apps,slug',
             'newApp.api_key' => 'required|string',
             'newApp.endpoint_url' => 'required|url',
-            'newApp.endpoint_type' => 'required|in:chat,completion,workflow',
         ]);
 
         DifyApp::create([
@@ -134,7 +129,6 @@ class DifyAppList extends Component
             'slug' => $this->newApp['slug'],
             'api_key_encrypted' => encrypt($this->newApp['api_key']),
             'endpoint_url' => $this->newApp['endpoint_url'],
-            'endpoint_type' => $this->newApp['endpoint_type'],
             'is_active' => true,
         ]);
 
@@ -153,4 +147,3 @@ class DifyAppList extends Component
 | Slug | required, string, max:100, regex:/^[a-z0-9-]+$/, unique:dify_apps,slug |
 | APIキー | required, string |
 | エンドポイントURL | required, url |
-| タイプ | required, in:chat,completion,workflow |

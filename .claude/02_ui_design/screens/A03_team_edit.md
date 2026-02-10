@@ -20,14 +20,13 @@
 - `navigation/Breadcrumb`
 - `forms/TextInput`
 - `forms/SelectInput`
-- `forms/ToggleSwitch`
 - `forms/ApiKeyField`
 - `data-display/DataTable`
 - `data-display/StatusBadge`
 - `buttons/Button` (primary, secondary, danger)
 - `buttons/IconButton`
-- `modals/Modal` (ユーザー招待)
-- `modals/ConfirmModal` (削除確認, APIキー再生成)
+- `modals/Modal` (ユーザー追加、ユーザー編集)
+- `modals/ConfirmModal` (APIキー再生成確認)
 - `feedback/AlertBanner`
 
 ## 画面構成
@@ -41,35 +40,37 @@
 | フィールド | タイプ | 説明 |
 |-----------|--------|------|
 | 拠点名 | TextInput | 必須 |
-| プラン | SelectInput | Light/Standard/Pro |
-| ステータス | ToggleSwitch | Active/Inactive |
+| プラン | SelectInput | Light/Standard/Pro (月間リクエスト制限表示付き) |
 
 ### 3. 所属ユーザー一覧セクション
 
 テーブルカラム：
 | カラム | 内容 |
 |--------|------|
-| ユーザー名 | 名前 + メールアドレス |
-| 役割 | Owner/Admin/Member バッジ |
-| 操作 | 役割変更、削除（Ownerは削除不可） |
+| ユーザー名 / メール | 名前 + メールアドレス (グレー表示) + アバター |
+| 登録日 | 登録日付 (YYYY-MM-DD) |
+| 操作 | 編集ボタン、削除ボタン |
 
 アクション：
-- ユーザー招待ボタン → モーダル表示
+- ユーザー追加ボタン → 新規ユーザー追加モーダル表示
+- 編集ボタン → ユーザー編集モーダル表示
 
 ### 4. APIキー管理セクション
 
 | 項目 | 説明 |
 |------|------|
-| 現在のAPIキー | マスク表示 + 表示/コピーボタン |
-| 作成日時 | APIキー作成日 |
-| 再生成ボタン | 確認モーダル後に新規キー発行 |
+| 現在のAPIキー | マスク表示 (demo_key_********************) + 表示ボタン + コピーボタン + 再生成ボタン |
+| 最終利用 | APIキー最終利用日時 (YYYY-MM-DD HH:MM:SS) |
+| Gateway ID | Gateway_01 (右上にバッジ表示) |
 
-注意: APIキーは再生成時のみ平文表示。以降はマスク表示。
+動作仕様：
+- 表示ボタンクリック → ローディング後に平文表示
+- 再生成ボタンクリック → 確認モーダル表示 → 確認後に新規キー発行 → 平文表示
 
 ### 5. Danger Zone
 
-- 拠点削除ボタン
-- 削除確認モーダル（拠点名入力必須）
+- チーム削除ボタン
+- 説明: このチームとそのすべての利用データを完全に削除します
 
 ## データ取得
 
@@ -87,14 +88,16 @@ public function mount(Team $team)
 
 | 操作 | 動作 |
 |------|------|
-| 基本情報変更 | リアルタイムバリデーション |
+| 基本情報変更 | フォーム入力 |
 | 保存ボタン | Team更新 → トースト表示 |
-| ユーザー招待 | モーダル表示 → User作成 + Team紐付け |
-| ユーザー削除 | 確認後削除（Ownerは不可） |
-| APIキー表示 | マスク解除 |
-| APIキーコピー | クリップボードにコピー |
-| APIキー再生成 | 確認モーダル → 新規キー発行 → 表示 |
-| 拠点削除 | 確認モーダル（名前入力） → 削除 → A02へ遷移 |
+| ユーザー追加ボタン | 新規ユーザー追加モーダル表示 |
+| ユーザー編集ボタン | ユーザー編集モーダル表示（currentUser データバインド） |
+| ユーザー削除ボタン | 削除実行 |
+| APIキー表示ボタン | ローディング (800ms) → マスク解除 → 平文表示 |
+| APIキーコピーボタン | クリップボードにコピー |
+| APIキー再生成ボタン | 確認モーダル表示 |
+| 再生成確認 | 新規キー発行 (1000ms) → 平文表示 |
+| チーム削除ボタン | 削除実行（確認なし、実装時は確認モーダル推奨） |
 
 ## Livewire実装
 
@@ -114,13 +117,16 @@ class TeamEdit extends Component
     public $showRegenerateModal = false;
     public $showDeleteModal = false;
 
-    // 招待フォーム
-    public $inviteEmail = '';
-    public $inviteName = '';
-    public $inviteRole = 'member';
+    // ユーザー追加フォーム
+    public $newUserName = '';
+    public $newUserEmail = '';
+    public $newUserPassword = '';
 
-    // 削除確認
-    public $deleteConfirmation = '';
+    // ユーザー編集フォーム
+    public $currentUser = [];
+    public $editUserName = '';
+    public $editUserEmail = '';
+
 
     // APIキー表示状態
     public $showApiKey = false;
@@ -173,9 +179,15 @@ class TeamEdit extends Component
 | 拠点名 | required, string, max:255 |
 | プラン | required, exists:plans,id |
 
-### ユーザー招待
+### ユーザー追加
 | フィールド | ルール |
 |-----------|--------|
+| お名前 | required, string, max:255 |
 | メールアドレス | required, email, unique:users,email |
-| ユーザー名 | required, string, max:255 |
-| 役割 | required, in:admin,member |
+| 初期パスワード | required, string, min:8 |
+
+### ユーザー編集
+| フィールド | ルール |
+|-----------|--------|
+| お名前 | required, string, max:255 |
+| メールアドレス | required, email, unique:users,email (自身を除外) |

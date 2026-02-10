@@ -19,7 +19,7 @@ Difyアプリの詳細情報編集と削除を行う画面。
 - `layout/PageHeader`
 - `navigation/Breadcrumb`
 - `forms/TextInput`
-- `forms/SelectInput`
+- `forms/Textarea`
 - `forms/ToggleSwitch`
 - `forms/ApiKeyField`
 - `buttons/Button`
@@ -38,14 +38,14 @@ Difyアプリの詳細情報編集と削除を行う画面。
 |-----------|--------|------|
 | アプリ名 | TextInput | 表示名 |
 | Slug | TextInput | URLパス（readonly推奨、変更時は警告） |
-| エンドポイントURL | TextInput | Dify APIのURL |
-| エンドポイントタイプ | SelectInput | chat/completion/workflow |
-| ステータス | ToggleSwitch | Active/Inactive |
+| 説明・メモ | Textarea | アプリの説明（任意） |
+| ステータス | ToggleSwitch | Active/Inactive (緑: Active, グレー: Inactive) |
 
-### 3. APIキー管理セクション
+### 3. Dify接続情報セクション
 
 | 項目 | 説明 |
 |------|------|
+| エンドポイントURL | Dify APIのURL |
 | Dify APIキー | マスク表示 + 表示/非表示切替 |
 | 更新ボタン | 新しいAPIキーを設定 |
 
@@ -68,8 +68,8 @@ public function mount(DifyApp $app)
     $this->fill([
         'name' => $app->name,
         'slug' => $app->slug,
+        'description' => $app->description,
         'endpoint_url' => $app->endpoint_url,
-        'endpoint_type' => $app->endpoint_type,
         'is_active' => $app->is_active,
     ]);
 }
@@ -96,8 +96,8 @@ class DifyAppEdit extends Component
 
     public $name;
     public $slug;
+    public $description;
     public $endpoint_url;
-    public $endpoint_type;
     public $is_active;
 
     public $showApiKey = false;
@@ -110,8 +110,8 @@ class DifyAppEdit extends Component
             'name' => 'required|string|max:255',
             'slug' => ['required', 'string', 'max:100', 'regex:/^[a-z0-9-]+$/',
                        Rule::unique('dify_apps')->ignore($this->app->id)],
+            'description' => 'nullable|string|max:1000',
             'endpoint_url' => 'required|url',
-            'endpoint_type' => 'required|in:chat,completion,workflow',
         ];
     }
 
@@ -122,8 +122,8 @@ class DifyAppEdit extends Component
         $this->app->update([
             'name' => $this->name,
             'slug' => $this->slug,
+            'description' => $this->description,
             'endpoint_url' => $this->endpoint_url,
-            'endpoint_type' => $this->endpoint_type,
             'is_active' => $this->is_active,
         ]);
 
@@ -163,8 +163,8 @@ class DifyAppEdit extends Component
 |-----------|--------|
 | アプリ名 | required, string, max:255 |
 | Slug | required, string, max:100, regex:/^[a-z0-9-]+$/, unique (except self) |
+| 説明・メモ | nullable, string, max:1000 |
 | エンドポイントURL | required, url |
-| タイプ | required, in:chat,completion,workflow |
 | 新APIキー | required, string (更新時のみ) |
 
 ## 注意事項
