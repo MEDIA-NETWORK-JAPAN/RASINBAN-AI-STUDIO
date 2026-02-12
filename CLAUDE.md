@@ -14,7 +14,7 @@
 - **Frontend:** Livewire 4.x (Jetstream Stack)
 - **Auth Scaffolding:** Laravel Jetstream (Teams機能有効)
 - **HTTP Client:** Laravel Http Facade (for Dify Proxy)
-- **Database:** MySQL 8.0+
+- **Database:** PostgreSQL 16+
 - **将来の拡張:** Laravel Sanctum (準備のみ)
 
 ## 主要機能
@@ -124,8 +124,15 @@ php artisan test
 - Dify APIキーは暗号化して保存
 - 管理者URLは環境変数で変更可能（推測防止）
 - プロンプト内容はログに保存しない（メタデータのみ）
+- **一般ユーザーエリア:** URLに`team_id`を含めない設計、必ず`auth()->user()->currentTeam`を使用
+  - 詳細は `.claude/01_development_docs/05_セキュリティ・コーディング規約.md` を参照
 
 ## ドキュメント参照ガイド（AI向け）
+
+**🔴 最優先参照ドキュメント:**
+- **テストケース定義書（実質仕様書）**: `.claude/01_development_docs/03_テストケース定義書.md`, `.claude/01_development_docs/04_画面テストケース定義書.md`
+  - これらは詳細な受入条件とテストケースを含み、実装の最終的な仕様として機能します
+  - 実装時は必ずこれらを参照して、すべての受入条件を満たすようにしてください
 
 以下の指示があった場合は、対応するドキュメントを参照してください。
 
@@ -136,6 +143,7 @@ php artisan test
 | 「A02画面を実装して」 | `.claude/02_ui_design/screens/A02_team_list.md` + `mocks/A02_team_list.html` |
 | 「拠点一覧画面を作って」 | `.claude/02_ui_design/screens/A02_team_list.md` |
 | 「ダッシュボードを実装」 | `.claude/02_ui_design/screens/A01_admin_dashboard.md` |
+| 「二段階認証を実装」 | `.claude/02_ui_design/screens/G02_two_factor_auth.md` + 要件定義書セクション5.5 |
 
 ### コンポーネント実装の指示
 
@@ -179,6 +187,10 @@ php artisan test
 | 「コミットメッセージを提案して」 | `.claude/03_git_guidelines.md` の規約に従う |
 | 「ブランチを作成」 | `.claude/03_git_guidelines.md` の命名規則に従う |
 
+**⚠️ コミットメッセージ禁止事項:**
+- `Co-Authored-By: Claude` などのAI署名を付与しないこと
+- 詳細は `.claude/03_git_guidelines.md` の「AI（Claude）との協業時の注意」セクション参照
+
 ### テスト・品質保証の指示
 
 | 指示例 | 参照ドキュメント |
@@ -194,6 +206,16 @@ php artisan test
 | 「Feature Testの書き方」 | `.claude/01_development_docs/04_画面テストケース定義書.md` の「7. テスト実装ガイド」 |
 | 「コンポーネントテストの書き方」 | `.claude/01_development_docs/03_テストケース定義書.md` の「7. テスト実装ガイド」 |
 
+### セキュリティ・コーディング規約の指示
+
+| 指示例 | 参照ドキュメント |
+|--------|-----------------|
+| 「一般ユーザーエリアを実装」 | `.claude/01_development_docs/05_セキュリティ・コーディング規約.md` の「2. 一般ユーザーエリアのコーディング規約」 |
+| 「セキュリティチェックリスト」 | `.claude/01_development_docs/05_セキュリティ・コーディング規約.md` の「4. セキュリティチェックリスト」 |
+| 「他チームのデータアクセス制御」 | `.claude/01_development_docs/05_セキュリティ・コーディング規約.md` の「1. データアクセス制御の基本方針」 |
+| 「禁止コードパターンは?」 | `.claude/01_development_docs/05_セキュリティ・コーディング規約.md` の「2.1 禁止事項」 |
+| 「current_team_idの使い方」 | `.claude/01_development_docs/05_セキュリティ・コーディング規約.md` の「2.2 必須事項」 |
+
 ### HTMLモックの参照
 
 実装時は対応するHTMLモックを必ず参照してください：
@@ -203,18 +225,22 @@ php artisan test
 
 ## 開発ドキュメント一覧
 
-| カテゴリ | ドキュメント | 内容 |
-|---------|-------------|------|
-| 要件定義 | `.claude/01_development_docs/01_要件定義書.md` | システム要件、機能要件 |
-| 機能一覧 | `.claude/01_development_docs/02_画面一覧・機能一覧定義書.md` | 画面・機能の詳細定義 |
-| コンポーネントテスト | `.claude/01_development_docs/03_テストケース定義書.md` | コンポーネント単体テストの受入条件とテストケース定義（約260ケース） |
-| 画面テスト | `.claude/01_development_docs/04_画面テストケース定義書.md` | 画面単位（Feature Test）の受入条件とテストケース定義（約130ケース） |
-| UI設計目次 | `.claude/02_ui_design/README.md` | UI設計ドキュメントの使い方 |
-| デザイントークン | `.claude/02_ui_design/_design_tokens.md` | Tailwind統一ルール |
-| コンポーネント | `.claude/02_ui_design/components/` | 共通UIコンポーネント仕様 |
-| 画面仕様 | `.claude/02_ui_design/screens/` | 各画面の実装仕様 |
-| HTMLモック | `.claude/02_ui_design/mocks/` | 参照用HTMLモック |
-| Git運用 | `.claude/03_git_guidelines.md` | コミットメッセージ規約、ブランチ運用 |
+| カテゴリ | ドキュメント | 内容 | 優先度 |
+|---------|-------------|------|--------|
+| **コンポーネントテスト（実質仕様書）** | `.claude/01_development_docs/03_テストケース定義書.md` | **コンポーネント単体テストの受入条件とテストケース定義（約260ケース）** | 🔴 **最優先** |
+| **画面テスト（実質仕様書）** | `.claude/01_development_docs/04_画面テストケース定義書.md` | **画面単位（Feature Test）の受入条件とテストケース定義（約168ケース）** | 🔴 **最優先** |
+| セキュリティ・コーディング規約 | `.claude/01_development_docs/05_セキュリティ・コーディング規約.md` | データアクセス制御、禁止/必須コードパターン、セキュリティチェックリスト | 🟠 High |
+| データベース定義 | `.claude/01_development_docs/06_データベース定義書.md` | PostgreSQL データベース設計、ER図、インデックス設計 | 🟠 High |
+| **環境バージョン情報** | `.claude/01_development_docs/07_環境バージョン情報.md` | **全ツールのバージョン一覧、互換性マトリクス、トラブルシューティング** | 🟠 **High** |
+| **テストコード実装プラン** | `.claude/01_development_docs/08_テストコード実装プラン.md` | **マイグレーション→Model→Factory→テスト実装の完全ロードマップ** | 🟠 **High** |
+| 要件定義 | `.claude/01_development_docs/01_要件定義書.md` | システム要件、機能要件 | 🟡 Medium |
+| 機能一覧 | `.claude/01_development_docs/02_画面一覧・機能一覧定義書.md` | 画面・機能の詳細定義 | 🟡 Medium |
+| UI設計目次 | `.claude/02_ui_design/README.md` | UI設計ドキュメントの使い方 | 🟡 Medium |
+| デザイントークン | `.claude/02_ui_design/_design_tokens.md` | Tailwind統一ルール | 🟡 Medium |
+| コンポーネント | `.claude/02_ui_design/components/` | 共通UIコンポーネント仕様 | 🟡 Medium |
+| 画面仕様 | `.claude/02_ui_design/screens/` | 各画面の実装仕様 | 🟡 Medium |
+| HTMLモック | `.claude/02_ui_design/mocks/` | 参照用HTMLモック | 🟡 Medium |
+| Git運用 | `.claude/03_git_guidelines.md` | コミットメッセージ規約、ブランチ運用 | 🟡 Medium |
 
 ===
 

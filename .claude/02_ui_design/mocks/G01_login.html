@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+【画面名称】ログイン画面 (Login)
+【ファイル名】login.html (G01)
+
+【概要】
+全ユーザー（管理者・一般ユーザー共通）のログイン画面。
+メールアドレスとパスワードでシステムに認証する。
+
+【主な機能】
+1. メールアドレス・パスワード入力
+2. Fortify認証
+3. 認証成功時の分岐処理
+   - 管理者（is_admin=true）: OTPコード生成 → ユーザーID=1へメール送信 → G02へリダイレクト
+   - 一般ユーザー（is_admin=false）: U01へリダイレクト
+4. 認証失敗時のエラー表示
+
+【使用ライブラリ (CDN)】
+- Tailwind CSS (v3.4)
+- Alpine.js
+- FontAwesome
+================================================================================
+-->
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン - Dify Gateway</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-100 to-blue-50 min-h-screen antialiased flex items-center justify-center p-4"
+      x-data="{
+          email: '',
+          password: '',
+          errorMessage: '',
+          loading: false,
+
+          // デモ用の認証ロジック
+          authenticate() {
+              // バリデーション
+              if (!this.email) {
+                  this.errorMessage = 'メールアドレスを入力してください';
+                  return;
+              }
+              if (!this.password) {
+                  this.errorMessage = 'パスワードを入力してください';
+                  return;
+              }
+
+              this.loading = true;
+              this.errorMessage = '';
+
+              // デモ用：1秒待機
+              setTimeout(() => {
+                  // デモ用の認証ロジック
+                  // 管理者: admin@example.com / password
+                  // 一般ユーザー: user@example.com / password
+                  if (this.email === 'admin@example.com' && this.password === 'password') {
+                      // 管理者の場合：二段階認証へ
+                      alert('管理者認証成功！本来はOTPコードをユーザーID=1の管理者に送信し、G02（二段階認証画面）へリダイレクトされます。');
+                      this.loading = false;
+                  } else if (this.email === 'user@example.com' && this.password === 'password') {
+                      // 一般ユーザーの場合：ダッシュボードへ
+                      alert('一般ユーザー認証成功！本来はU01（拠点ダッシュボード）へリダイレクトされます。');
+                      this.loading = false;
+                  } else {
+                      // 認証失敗
+                      this.errorMessage = 'メールアドレスまたはパスワードが正しくありません。';
+                      this.loading = false;
+                  }
+              }, 1000);
+          }
+      }">
+
+    <!-- メインコンテナ -->
+    <div class="w-full max-w-md">
+        <!-- ロゴ・ヘッダー -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4">
+                <i class="fas fa-network-wired text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Dify Gateway</h1>
+            <p class="text-gray-600 text-sm">rasinban-ai-studio</p>
+        </div>
+
+        <!-- ログインカード -->
+        <div class="bg-white shadow-xl rounded-2xl p-8">
+            <!-- エラーメッセージ -->
+            <div x-show="errorMessage"
+                 x-cloak
+                 x-transition
+                 class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                <i class="fas fa-exclamation-circle text-red-600 mt-0.5"></i>
+                <p class="text-sm text-red-800" x-text="errorMessage"></p>
+            </div>
+
+            <!-- ログインフォーム -->
+            <form @submit.prevent="authenticate()">
+                <!-- メールアドレス -->
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                        メールアドレス
+                    </label>
+                    <input
+                        type="email"
+                        id="email"
+                        x-model="email"
+                        @input="errorMessage = ''"
+                        placeholder="user@example.com"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                        :disabled="loading"
+                        autocomplete="email"
+                        required>
+                </div>
+
+                <!-- パスワード -->
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                        パスワード
+                    </label>
+                    <input
+                        type="password"
+                        id="password"
+                        x-model="password"
+                        @input="errorMessage = ''"
+                        placeholder="パスワードを入力"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                        :disabled="loading"
+                        autocomplete="current-password"
+                        required>
+                </div>
+
+                <!-- ログインボタン -->
+                <button
+                    type="submit"
+                    :disabled="loading"
+                    class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    <i class="fas fa-sign-in-alt" x-show="!loading"></i>
+                    <i class="fas fa-spinner fa-spin" x-show="loading" x-cloak></i>
+                    <span x-show="!loading">ログイン</span>
+                    <span x-show="loading" x-cloak>認証中...</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- デモ用の注記 -->
+        <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div class="flex items-start gap-3">
+                <i class="fas fa-info-circle text-yellow-600 mt-0.5"></i>
+                <div class="text-xs text-yellow-800">
+                    <p class="font-semibold mb-2">デモ用モック画面</p>
+                    <p class="mb-2"><strong>管理者でログイン:</strong></p>
+                    <ul class="list-disc list-inside mb-2 space-y-1">
+                        <li>メール: <code class="bg-yellow-100 px-1 rounded font-mono">admin@example.com</code></li>
+                        <li>パスワード: <code class="bg-yellow-100 px-1 rounded font-mono">password</code></li>
+                    </ul>
+                    <p class="mb-2"><strong>一般ユーザーでログイン:</strong></p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>メール: <code class="bg-yellow-100 px-1 rounded font-mono">user@example.com</code></li>
+                        <li>パスワード: <code class="bg-yellow-100 px-1 rounded font-mono">password</code></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- フッター -->
+        <div class="text-center mt-6">
+            <p class="text-xs text-gray-500">
+                © 2024 Dify Gateway - rasinban-ai-studio
+            </p>
+        </div>
+    </div>
+
+</body>
+</html>

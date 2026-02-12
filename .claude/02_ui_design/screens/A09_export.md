@@ -160,21 +160,8 @@ class DrExport extends Component
 3. `php artisan db:seed --class=OnPremiseSetupSeeder` を実行
 4. 拠点・ユーザー・APIキーが復元される
 
-## 監査ログ
+## エクスポート仕様
 
-エクスポート実行時は以下を記録：
-- 操作者
-- 操作日時
-- エクスポートした拠点数
-
-```php
-// Controller or Livewire
-AuditLog::create([
-    'user_id' => auth()->id(),
-    'action' => 'dr_export',
-    'details' => json_encode([
-        'team_count' => $teams->count(),
-        'user_count' => $teams->sum(fn($t) => $t->users->count()),
-    ]),
-]);
-```
+- **対象データ:** 全拠点・全ユーザー・全APIキー（選択不可、全件エクスポート）
+- **APIキー形式:** 平文（復号化済み）で出力
+- **エクスポート履歴:** 記録なし（災害復旧用のため、履歴管理は不要）

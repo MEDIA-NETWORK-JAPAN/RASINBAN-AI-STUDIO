@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+【画面名称】二段階認証コード入力画面 (Two-Factor Authentication)
+【ファイル名】two_factor_auth.html (G02)
+
+【概要】
+管理者（is_admin=true）がログインした際、メールアドレス・パスワード認証後に表示される
+二段階認証コード入力画面。ユーザーID=1の管理者のメールアドレスに送信された6桁のOTPコードを
+入力して認証を完了する。
+
+【主な機能】
+1. OTPコード入力
+   - 6桁の数字のみ受付
+   - リアルタイムバリデーション
+2. 認証検証
+   - 正しいコード入力でログイン完了（A01へ遷移）
+   - 間違ったコード入力でエラー表示 + 試行回数カウント
+   - 5回連続失敗でログアウト（G01へ遷移）
+3. コード再送信
+   - 新しいOTPコードをユーザーID=1の管理者に送信
+4. ログアウト
+   - 認証をキャンセルしてログイン画面へ戻る
+
+【使用ライブラリ (CDN)】
+- Tailwind CSS (v3.4)
+- Alpine.js
+- FontAwesome
+================================================================================
+-->
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二段階認証 - Dify Gateway</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        [x-cloak] { display: none !important; }
+
+        /* OTPコード入力フィールドのスタイリング */
+        input[type="text"].otp-input {
+            font-size: 2rem;
+            letter-spacing: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+        }
+        input[type="text"].otp-input::-webkit-outer-spin-button,
+        input[type="text"].otp-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-100 to-blue-50 min-h-screen antialiased flex items-center justify-center p-4"
+      x-data="{
+          code: '',
+          attempts: 0,
+          maxAttempts: 5,
+          errorMessage: '',
+          successMessage: '',
+          loading: false,
+          resending: false,
+
+          // 正解のOTPコード（デモ用）
+          correctCode: '123456',
+
+          // コード入力時の自動フォーマット（数字のみ、6桁まで）
+          formatCode() {
+              this.code = this.code.replace(/[^0-9]/g, '').substring(0, 6);
+              this.errorMessage = '';
+          },
+
+          // 認証検証
+          verify() {
+              if (this.code.length !== 6) {
+                  this.errorMessage = '6桁の認証コードを入力してください';
+                  return;
+              }
+
+              this.loading = true;
+              this.errorMessage = '';
+
+              // デモ用：1秒待機
+              setTimeout(() => {
+                  if (this.code === this.correctCode) {
+                      // 認証成功
+                      this.successMessage = '認証に成功しました。管理者ダッシュボードへ移動します...';
+                      setTimeout(() => {
+                          alert('認証成功！本来はA01（管理者ダッシュボード）へリダイレクトされます。');
+                          this.loading = false;
+                      }, 1500);
+                  } else {
+                      // 認証失敗
+                      this.attempts++;
+                      this.code = '';
+                      this.loading = false;
+
+                      if (this.attempts >= this.maxAttempts) {
+                          this.errorMessage = '試行回数の上限に達しました。再度ログインしてください。';
+                          setTimeout(() => {
+                              alert('試行回数超過。本来はG01（ログイン画面）へリダイレクトされます。');
+                          }, 2000);
+                      } else {
+                          this.errorMessage = `認証コードが正しくありません（残り試行回数: ${this.maxAttempts - this.attempts}回）`;
+                      }
+                  }
+              }, 1000);
+          },
+
+          // コード再送信
+          resend() {
+              this.resending = true;
+              this.errorMessage = '';
+              this.successMessage = '';
+
+              // デモ用：1.5秒待機
+              setTimeout(() => {
+                  this.resending = false;
+                  this.successMessage = '新しいコードをメールに送信しました（ユーザーID=1の管理者へ）';
+
+                  // 成功メッセージを3秒後に消す
+                  setTimeout(() => {
+                      this.successMessage = '';
+                  }, 3000);
+              }, 1500);
+          },
+
+          // ログアウト
+          logout() {
+              if (confirm('認証をキャンセルしてログイン画面に戻りますか？')) {
+                  alert('ログアウト。本来はG01（ログイン画面）へリダイレクトされます。');
+              }
+          }
+      }">
+
+    <!-- メインコンテナ -->
+    <div class="w-full max-w-md">
+        <!-- ロゴ・ヘッダー -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4">
+                <i class="fas fa-shield-alt text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">二段階認証</h1>
+            <p class="text-gray-600 text-sm">
+                システム管理者（ユーザーID=1）のメールアドレスに<br>
+                6桁の認証コードを送信しました。
+            </p>
+        </div>
+
+        <!-- 認証カード -->
+        <div class="bg-white shadow-xl rounded-2xl p-8">
+            <!-- 成功メッセージ -->
+            <div x-show="successMessage"
+                 x-cloak
+                 x-transition
+                 class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+                <i class="fas fa-check-circle text-green-600 mt-0.5"></i>
+                <p class="text-sm text-green-800" x-text="successMessage"></p>
+            </div>
+
+            <!-- エラーメッセージ -->
+            <div x-show="errorMessage"
+                 x-cloak
+                 x-transition
+                 class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                <i class="fas fa-exclamation-circle text-red-600 mt-0.5"></i>
+                <p class="text-sm text-red-800" x-text="errorMessage"></p>
+            </div>
+
+            <!-- OTPコード入力 -->
+            <div class="mb-6">
+                <label for="code" class="block text-sm font-medium text-gray-700 mb-2">
+                    認証コード
+                </label>
+                <input
+                    type="text"
+                    id="code"
+                    x-model="code"
+                    @input="formatCode()"
+                    @keydown.enter="verify()"
+                    placeholder="123456"
+                    class="otp-input w-full px-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                    :disabled="loading || attempts >= maxAttempts"
+                    maxlength="6"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    autocomplete="off">
+                <p class="text-xs text-gray-500 mt-2">
+                    6桁の数字を入力してください
+                </p>
+            </div>
+
+            <!-- 認証ボタン -->
+            <button
+                @click="verify()"
+                :disabled="code.length !== 6 || loading || attempts >= maxAttempts"
+                class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4">
+                <i class="fas fa-lock" x-show="!loading"></i>
+                <i class="fas fa-spinner fa-spin" x-show="loading" x-cloak></i>
+                <span x-show="!loading">認証する</span>
+                <span x-show="loading" x-cloak>検証中...</span>
+            </button>
+
+            <!-- 再送信・ログアウトボタン -->
+            <div class="flex gap-3">
+                <button
+                    @click="resend()"
+                    :disabled="resending || attempts >= maxAttempts"
+                    class="flex-1 bg-white text-gray-700 font-medium py-2.5 px-4 rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm">
+                    <i class="fas fa-envelope" x-show="!resending"></i>
+                    <i class="fas fa-spinner fa-spin" x-show="resending" x-cloak></i>
+                    <span x-show="!resending">コードを再送信</span>
+                    <span x-show="resending" x-cloak>送信中...</span>
+                </button>
+
+                <button
+                    @click="logout()"
+                    class="flex-1 bg-white text-gray-700 font-medium py-2.5 px-4 rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition flex items-center justify-center gap-2 text-sm">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>ログアウト</span>
+                </button>
+            </div>
+
+            <!-- 注記 -->
+            <div class="mt-6 pt-6 border-t border-gray-200 space-y-2">
+                <div class="flex items-start gap-2 text-xs text-gray-600">
+                    <i class="fas fa-clock text-gray-400 mt-0.5"></i>
+                    <p>このコードは <strong>10分間</strong> 有効です。</p>
+                </div>
+                <div class="flex items-start gap-2 text-xs text-gray-600">
+                    <i class="fas fa-shield-alt text-gray-400 mt-0.5"></i>
+                    <p>コードを他人に教えないでください。</p>
+                </div>
+                <div class="flex items-start gap-2 text-xs text-gray-600">
+                    <i class="fas fa-envelope text-gray-400 mt-0.5"></i>
+                    <p>コードは <strong>ユーザーID=1の管理者</strong> に送信されています。受信していない場合は管理者にお問い合わせください。</p>
+                </div>
+            </div>
+
+            <!-- 試行回数表示 -->
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg" x-show="attempts > 0" x-cloak>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600">試行回数:</span>
+                    <span class="font-semibold" :class="attempts >= maxAttempts ? 'text-red-600' : 'text-gray-900'">
+                        <span x-text="attempts"></span> / <span x-text="maxAttempts"></span>
+                    </span>
+                </div>
+                <div class="mt-2 w-full bg-gray-200 rounded-full h-1.5">
+                    <div class="h-1.5 rounded-full transition-all duration-300"
+                         :class="attempts >= maxAttempts ? 'bg-red-600' : 'bg-yellow-500'"
+                         :style="`width: ${(attempts / maxAttempts) * 100}%`"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- デモ用の注記 -->
+        <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div class="flex items-start gap-3">
+                <i class="fas fa-info-circle text-yellow-600 mt-0.5"></i>
+                <div class="text-xs text-yellow-800">
+                    <p class="font-semibold mb-1">デモ用モック画面</p>
+                    <p>正しいOTPコードは <strong class="font-mono bg-yellow-100 px-1 rounded">123456</strong> です。</p>
+                    <p class="mt-1">実際の実装では、ユーザーID=1の管理者のメールアドレスに送信されたコードを入力します。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- フッター -->
+        <div class="text-center mt-6">
+            <p class="text-xs text-gray-500">
+                © 2024 Dify Gateway - rasinban-ai-studio
+            </p>
+        </div>
+    </div>
+
+</body>
+</html>

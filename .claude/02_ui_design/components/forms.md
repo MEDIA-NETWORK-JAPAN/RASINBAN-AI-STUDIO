@@ -327,3 +327,90 @@ APIキー表示・コピー用フィールド。
 ### 使用モック
 - A03_team_edit.html
 - A06_dify_app_edit.html
+
+---
+
+## PasswordInput
+
+パスワード入力フィールド（新規パスワード設定・変更用）。
+
+### バリデーションルール
+
+パスワードは以下の条件を満たす必要があります：
+
+| 条件 | 説明 |
+|------|------|
+| 最低文字数 | 10文字以上 |
+| 文字種 | 小文字・大文字・数字・記号を**全て含む** |
+| ブラックリスト | `password`, `admin`, `12345678`, `qwerty`等のよく使われるパスワードは禁止 |
+| 最大文字数 | 64文字まで |
+
+**Laravelバリデーションルール:**
+```php
+'password' => [
+    'required',
+    'string',
+    'min:10',
+    'max:64',
+    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]+$/',
+    'not_in:password,admin,12345678,qwerty,password123,admin123',
+],
+```
+
+### 構造
+
+```html
+<div>
+  <label class="block text-sm font-medium text-gray-700">{{ $label }}</label>
+  <input type="password"
+         name="{{ $name }}"
+         placeholder="{{ $placeholder }}"
+         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                focus:border-indigo-500 focus:ring-indigo-500
+                sm:text-sm border py-2 px-3"
+         required>
+  <p class="text-xs text-gray-500 mt-1">
+    ※10文字以上、小文字・大文字・数字・記号を全て含めてください。
+  </p>
+  @error($name)
+    <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+  @enderror
+</div>
+```
+
+### Props
+
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| label | string | Yes | - | ラベル（例: 初期パスワード） |
+| name | string | Yes | - | name属性 |
+| placeholder | string | No | - | プレースホルダー（例: Admin@2024） |
+
+### エラーメッセージ例
+
+| エラー条件 | メッセージ |
+|-----------|-----------|
+| 10文字未満 | パスワードは10文字以上で入力してください。 |
+| 文字種不足 | パスワードには小文字・大文字・数字・記号を全て含めてください。 |
+| ブラックリスト | このパスワードはよく使われるため使用できません。 |
+
+### 使用画面
+- A03: 拠点編集（ユーザー追加モーダル）
+- A04: CSV一括登録（自動生成）
+- プロフィール設定（パスワード変更）
+
+### 使用モック
+- A03_team_edit.html
+
+### OK/NG例
+
+✅ **OK例:**
+- `Admin@2024` (10文字、全種類含む)
+- `Tokyo#123x` (10文字、全種類含む)
+- `MyPass@word99` (13文字、全種類含む)
+
+❌ **NG例:**
+- `Pass123!` (8文字、10文字未満)
+- `password123` (記号なし、ブラックリスト)
+- `PASSWORD!@#` (小文字・数字なし)
+- `allowercase` (大文字・数字・記号なし)

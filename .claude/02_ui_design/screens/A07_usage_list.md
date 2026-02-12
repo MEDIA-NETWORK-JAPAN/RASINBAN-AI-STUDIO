@@ -95,11 +95,28 @@ public function getUsagesProperty()
 | 操作 | 動作 |
 |------|------|
 | 年月変更 | フィルタリング更新 |
-| 拠点名入力 | リアルタイム検索 (debounce) |
+| 拠点名入力 | リアルタイム検索 (debounce 300ms) |
 | アプリ選択 | フィルタリング更新 |
-| 超過のみトグル | フィルタリング更新 |
-| CSV出力 | 現在のフィルタ条件でCSVダウンロード |
+| 超過のみトグル | フィルタリング更新（利用率100%超過のレコードのみ表示） |
+| CSV出力ボタン | 現在のフィルタ条件でCSVダウンロード（`usages_{年月}.csv`） |
 | 修正ボタン | A08モーダルを開く |
+
+## CSV出力のビジネスロジック
+
+**ファイル名:** `usages_{YYYY-MM}.csv`（例: `usages_2024-01.csv`）
+
+**文字エンコーディング:** UTF-8 BOM付き（Excel対応）
+
+**CSVヘッダー:**
+```
+年月,拠点名,プラン,アプリ名,利用回数,月間上限,利用率(%),最終更新
+```
+
+**データ取得:**
+- 現在のフィルタ条件（年月、拠点名、アプリ、制限超過のみ）をすべて適用
+- ページネーションなし（全件出力）
+- 利用率は小数点第1位まで表示（例: 95.3）
+- 削除されたアプリは「削除されたアプリ」と表示
 
 ## Livewire実装
 
@@ -132,10 +149,58 @@ class UsageList extends Component
 
     public function exportCsv()
     {
-        // CSVエクスポート処理
-        return response()->streamDownload(function () {
-            // ...
-        }, "usages_{$this->month}.csv");
+        // 現在のフィルタ条件を適用したデータを取得
+        $usages = MonthlyApiUsage::query()
+            ->when($this->month, fn($q) => $q->where('year_month', $this->month))
+            ->when($this->teamSearch, fn($q) => $q->whereHas('team', fn($q) =>
+                $q->where('name', 'like', "%{$this->teamSearch}%")
+            ))
+            ->when($this->appFilter, fn($q) => $q->where('dify_app_id', $this->appFilter))
+            ->when($this->overLimitOnly, fn($q) => $q->whereRaw('count > monthly_limit'))
+            ->with(['team.plan', 'difyApp'])
+            ->orderByDesc('count')
+            ->get();
+
+        return response()->streamDownload(function () use ($usages) {
+            $handle = fopen('php://output', 'w');
+
+            // UTF-8 BOM（Excel対応）
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // CSVヘッダー
+            fputcsv($handle, [
+                '年月',
+                '拠点名',
+                'プラン',
+                'アプリ名',
+                '利用回数',
+                '月間上限',
+                '利用率(%)',
+                '最終更新',
+            ]);
+
+            // データ行
+            foreach ($usages as $usage) {
+                $percentage = $usage->monthly_limit > 0
+                    ? round(($usage->count / $usage->monthly_limit) * 100, 1)
+                    : 0;
+
+                fputcsv($handle, [
+                    $usage->year_month,
+                    $usage->team->name ?? '',
+                    $usage->team->plan->name ?? '',
+                    $usage->difyApp->name ?? '削除されたアプリ',
+                    $usage->count,
+                    $usage->monthly_limit,
+                    $percentage,
+                    $usage->updated_at->format('Y-m-d H:i:s'),
+                ]);
+            }
+
+            fclose($handle);
+        }, "usages_{$this->month}.csv", [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 }
 ```
