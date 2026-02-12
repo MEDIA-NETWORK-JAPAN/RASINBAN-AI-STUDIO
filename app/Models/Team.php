@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Jetstream\Events\TeamCreated;
 use Laravel\Jetstream\Events\TeamDeleted;
 use Laravel\Jetstream\Events\TeamUpdated;
@@ -21,6 +23,7 @@ class Team extends JetstreamTeam
     protected $fillable = [
         'name',
         'personal_team',
+        'plan_id',
     ];
 
     /**
@@ -44,5 +47,20 @@ class Team extends JetstreamTeam
         return [
             'personal_team' => 'boolean',
         ];
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    public function teamApiKeys(): HasMany
+    {
+        return $this->hasMany(TeamApiKey::class);
+    }
+
+    public function monthlyApiUsages(): HasMany
+    {
+        return $this->hasMany(MonthlyApiUsage::class);
     }
 }
