@@ -36,7 +36,18 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'profile_photo_path' => null,
             'current_team_id' => null,
+            'is_admin' => false,
         ];
+    }
+
+    /**
+     * Indicate that the user is an administrator.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+        ]);
     }
 
     /**
