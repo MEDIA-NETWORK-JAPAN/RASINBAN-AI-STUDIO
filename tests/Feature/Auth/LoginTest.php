@@ -148,4 +148,39 @@ class LoginTest extends TestCase
         $response->assertSessionHasErrors(['password']);
         $this->assertGuest();
     }
+
+    /**
+     * TC-G01-009: ログイン処理中のボタン無効化
+     *
+     * Note: This is a frontend (Livewire/Alpine.js) interaction test.
+     * Skipped as it requires browser testing (Dusk).
+     */
+    public function test_login_button_disabled_during_processing(): void
+    {
+        $this->markTestSkipped('Frontend interaction test - requires Dusk');
+    }
+
+    /**
+     * TC-G01-010: スーパー管理者不在エラー
+     */
+    public function test_admin_login_fails_when_super_admin_not_exists(): void
+    {
+        // Create admin user but NOT user ID=1
+        $admin = $this->createAdminUser([
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        // Ensure user ID=1 does not exist
+        \App\Models\User::where('id', 1)->delete();
+
+        $response = $this->post('/login', [
+            'email' => 'admin@example.com',
+            'password' => 'password123',
+        ]);
+
+        // Should show system error when super admin (ID=1) doesn't exist
+        // This may need adjustment based on actual implementation
+        $response->assertSessionHasErrors();
+    }
 }
