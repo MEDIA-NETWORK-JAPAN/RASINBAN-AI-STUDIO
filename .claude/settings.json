@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "autoApprove": {
+      "tools": [
+        "Read",
+        "Edit",
+        "Bash",
+        "Glob",
+        "Grep",
+        "WebFetch",
+        "WebSearch",
+        "Task",
+        "Skill",
+        "NotebookEdit",
+        "AskUserQuestion",
+        "TaskCreate",
+        "TaskUpdate",
+        "TaskGet",
+        "TaskList",
+        "TaskOutput"
+      ]
+    }
+  }
+}
