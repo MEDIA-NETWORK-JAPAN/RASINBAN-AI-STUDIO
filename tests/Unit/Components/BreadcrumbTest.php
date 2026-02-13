@@ -89,4 +89,43 @@ class BreadcrumbTest extends TestCase
 
         $view->assertSee('fa-chevron-right', false);
     }
+
+    /**
+     * TC-BC-005: 中間アイテムのリンク表示
+     * AC-BC-004: 中間のアイテムがリンクとして表示される
+     */
+    public function test_middle_items_are_links(): void
+    {
+        $this->markTestIncomplete('Breadcrumbコンポーネント実装後に有効化');
+
+        $items = [
+            ['href' => '/admin', 'label' => 'ホーム'],
+            ['href' => '/admin/teams', 'label' => '拠点一覧'],
+            ['href' => null, 'label' => '詳細'],
+        ];
+
+        $view = $this->blade('<x-breadcrumb :items="$items" />', ['items' => $items]);
+
+        // 中間アイテム「拠点一覧」がリンクとして表示される
+        $view->assertSee('href="/admin/teams"', false);
+        $view->assertSee('拠点一覧', false);
+    }
+
+    /**
+     * TC-BC-006: 単一アイテム時の区切り記号非表示
+     * AC-BC-401: Props `items` が1個のみの場合、区切り記号は表示されない
+     */
+    public function test_no_separator_for_single_item(): void
+    {
+        $this->markTestIncomplete('Breadcrumbコンポーネント実装後に有効化');
+
+        $items = [
+            ['href' => null, 'label' => 'ホーム'],
+        ];
+
+        $view = $this->blade('<x-breadcrumb :items="$items" />', ['items' => $items]);
+
+        // 区切り記号が表示されない
+        $view->assertDontSee('fa-chevron-right', false);
+    }
 }

@@ -59,4 +59,16 @@ class MonthInputTest extends TestCase
     {
         $this->markTestSkipped('Livewire component test - requires Livewire implementation');
     }
+
+    /**
+     * TC-MI-005: フォーカス時のスタイル
+     * AC-MI-101: フォーカス時、`focus:border-indigo-500` と `focus:ring-indigo-500` が適用される
+     *
+     * Note: This is a frontend focus state test.
+     * Skipped as it requires browser testing (Dusk).
+     */
+    public function test_focus_state_applies_indigo_styles(): void
+    {
+        $this->markTestSkipped('Frontend focus state test - requires Dusk');
+    }
 }

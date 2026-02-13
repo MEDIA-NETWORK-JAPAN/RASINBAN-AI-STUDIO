@@ -121,4 +121,16 @@ class FileDropzoneTest extends TestCase
     {
         $this->markTestSkipped('File size validation test - requires Livewire or Form Request implementation');
     }
+
+    /**
+     * TC-FD-010: ホバー時のスタイル
+     * AC-FD-103: ホバー時、`hover:border-indigo-400` と `hover:bg-indigo-50/50` が適用される
+     *
+     * Note: This is a frontend hover state test.
+     * Skipped as it requires browser testing (Dusk).
+     */
+    public function test_hover_state_applies_indigo_styles(): void
+    {
+        $this->markTestSkipped('Frontend hover state test - requires Dusk');
+    }
 }

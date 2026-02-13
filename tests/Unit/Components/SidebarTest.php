@@ -104,4 +104,29 @@ class SidebarTest extends TestCase
     {
         $this->markTestSkipped('Frontend state test - requires Dusk');
     }
+
+    /**
+     * TC-SB-008: サイドバー幅の設定
+     * AC-SB-005: サイドバーの幅が `w-64` である
+     */
+    public function test_sidebar_width_is_w64(): void
+    {
+        $this->markTestIncomplete('Sidebarコンポーネント実装後に有効化');
+
+        $view = $this->blade('<x-sidebar />');
+
+        $view->assertSee('w-64', false);
+    }
+
+    /**
+     * TC-SB-009: モバイルオーバーレイの表示
+     * AC-SB-504: モバイル（lg未満）で `sidebarOpen=true` の場合、オーバーレイが表示される
+     *
+     * Note: This is a frontend (Alpine.js) conditional rendering test.
+     * Skipped as it requires browser testing (Dusk).
+     */
+    public function test_mobile_overlay_displayed_when_open(): void
+    {
+        $this->markTestSkipped('Frontend conditional rendering test - requires Dusk');
+    }
 }

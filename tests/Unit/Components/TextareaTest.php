@@ -72,4 +72,29 @@ class TextareaTest extends TestCase
     {
         $this->markTestSkipped('Livewire component test - requires Livewire implementation');
     }
+
+    /**
+     * TC-TA-006: デフォルト行数の適用
+     * AC-TA-005: デフォルトでは `rows="3"` が適用される
+     */
+    public function test_default_rows_is_three(): void
+    {
+        $this->markTestIncomplete('Textareaコンポーネント実装後に有効化');
+
+        $view = $this->blade('<x-textarea name="reason" />');
+
+        $view->assertSee('rows="3"', false);
+    }
+
+    /**
+     * TC-TA-007: フォーカス時のスタイル
+     * AC-TA-101: フォーカス時、`focus:ring-indigo-500` と `focus:border-indigo-500` が適用される
+     *
+     * Note: This is a frontend focus state test.
+     * Skipped as it requires browser testing (Dusk).
+     */
+    public function test_focus_state_applies_indigo_styles(): void
+    {
+        $this->markTestSkipped('Frontend focus state test - requires Dusk');
+    }
 }

@@ -111,4 +111,18 @@ class ApiKeyFieldTest extends TestCase
     {
         $this->markTestSkipped('Frontend clipboard interaction test - requires Dusk');
     }
+
+    /**
+     * TC-AK-009: フィールドスタイルの適用
+     * AC-AK-006: フィールドに `font-mono` と `bg-gray-50` が適用される
+     */
+    public function test_field_applies_mono_font_and_gray_background(): void
+    {
+        $this->markTestIncomplete('ApiKeyFieldコンポーネント実装後に有効化');
+
+        $view = $this->blade('<x-api-key-field value="sk-test" label="APIキー" />');
+
+        $view->assertSee('font-mono', false);
+        $view->assertSee('bg-gray-50', false);
+    }
 }

@@ -57,4 +57,20 @@ class PageHeaderTest extends TestCase
 
         $view->assertSee('新規登録', false);
     }
+
+    /**
+     * TC-PH-004: 説明文未設定時の非表示
+     * AC-PH-401: Props `description` が未設定の場合、説明文は表示されない
+     */
+    public function test_description_not_displayed_when_not_provided(): void
+    {
+        $this->markTestIncomplete('PageHeaderコンポーネント実装後に有効化');
+
+        $view = $this->blade('<x-page-header title="拠点一覧" />');
+
+        // 説明文要素が存在しない、または空であることを確認
+        $html = $view->getContent();
+        // 説明文用のクラス（text-xs text-gray-500など）が存在しないことを確認
+        $this->assertStringNotContainsString('text-xs text-gray-500', $html);
+    }
 }
