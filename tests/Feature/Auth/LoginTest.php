@@ -22,9 +22,8 @@ class LoginTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertStatus(200);
-        // ロゴの表示確認（imgタグまたはロゴ要素）
-        // Note: 実際のロゴ実装に応じて、適切なセレクタやクラス名に変更してください
-        $response->assertSee('logo', false); // または適切なロゴ識別子
+        // ロゴの表示確認（SVGにaria-label属性）
+        $response->assertSee('aria-label="Dify Gateway Logo"', false);
         $response->assertSee('Dify Gateway', false);
         $response->assertSee('email', false);
         $response->assertSee('password', false);
@@ -78,14 +77,14 @@ class LoginTest extends TestCase
         ]);
 
         // 期待値の検証:
-        // 1. OTPコード生成（セッションまたはDBに保存）
-        $this->assertTrue(session()->has('otp_code'));
+        // 1. 二段階認証待ちフラグの保存
+        $this->assertTrue(session()->has('two_factor_pending'));
 
         // 2. ユーザーID=1へメール送信（キューまたは即時送信）
         // Mail::assertSent() または Queue::assertPushed() で検証
 
-        // 3. セッション保存（login.id など）
-        $this->assertTrue(session()->has('login.id'));
+        // 3. 認証対象ユーザーIDの保存
+        $this->assertTrue(session()->has('two_factor_user_id'));
 
         // 4. ログアウト（認証されていない状態）
         $this->assertGuest();
@@ -117,9 +116,13 @@ class LoginTest extends TestCase
     /**
      * TC-G01-004: ログイン失敗（認証エラー）
      * AC-G01-204: メールアドレスまたはパスワードが間違っている場合、エラーメッセージが表示される
+     *
+     * 期待メッセージ（日本語）: 「メールアドレスまたはパスワードが正しくありません。」
      */
     public function test_login_fails_with_incorrect_credentials(): void
     {
+        app()->setLocale('ja');
+
         $user = $this->createUserWithTeam([
             'email' => 'test@example.com',
             'password' => bcrypt('password123'),
@@ -133,16 +136,23 @@ class LoginTest extends TestCase
         $response->assertSessionHasErrors('email');
         $this->assertGuest();
 
-        // 期待値: 認証エラーメッセージが表示される
-        // Note: エラーメッセージの具体的な文言はlocaleに依存するため、キーの存在のみ検証
+        // エラーメッセージが仕様の日本語文言と完全一致することを確認
+        $errors = session('errors')->get('email');
+        $this->assertNotEmpty($errors);
+        // AC-G01-204: 「メールアドレスまたはパスワードが正しくありません。」
+        $this->assertSame('メールアドレスまたはパスワードが正しくありません。', $errors[0]);
     }
 
     /**
      * TC-G01-005: メールアドレス空エラー
      * AC-G01-301: メールアドレスが空の場合、バリデーションエラーが表示される
+     *
+     * 期待メッセージ（日本語）: 「メールアドレスを入力してください」
      */
     public function test_email_is_required(): void
     {
+        app()->setLocale('ja');
+
         $response = $this->post('/login', [
             'email' => '',
             'password' => 'password123',
@@ -151,16 +161,23 @@ class LoginTest extends TestCase
         $response->assertSessionHasErrors(['email']);
         $this->assertGuest();
 
-        // 期待値: emailフィールドのバリデーションエラーが存在
-        // Note: エラーメッセージの具体的な文言はlocaleに依存するため、キーの存在のみ検証
+        // エラーメッセージが仕様の日本語文言と完全一致することを確認
+        $errors = session('errors')->get('email');
+        $this->assertNotEmpty($errors);
+        // AC-G01-301: 「メールアドレスを入力してください」
+        $this->assertSame('メールアドレスを入力してください', $errors[0]);
     }
 
     /**
      * TC-G01-006: メールアドレス形式エラー
      * AC-G01-302: メールアドレス形式が不正な場合、バリデーションエラーが表示される
+     *
+     * 期待メッセージ（日本語）: 「正しいメールアドレスを入力してください」
      */
     public function test_email_must_be_valid_format(): void
     {
+        app()->setLocale('ja');
+
         $response = $this->post('/login', [
             'email' => 'invalid-email',
             'password' => 'password123',
@@ -169,16 +186,23 @@ class LoginTest extends TestCase
         $response->assertSessionHasErrors(['email']);
         $this->assertGuest();
 
-        // 期待値: emailフィールドのバリデーションエラーが存在
-        // Note: エラーメッセージの具体的な文言はlocaleに依存するため、キーの存在のみ検証
+        // エラーメッセージが仕様の日本語文言と完全一致することを確認
+        $errors = session('errors')->get('email');
+        $this->assertNotEmpty($errors);
+        // AC-G01-302: 「正しいメールアドレスを入力してください」
+        $this->assertSame('正しいメールアドレスを入力してください', $errors[0]);
     }
 
     /**
      * TC-G01-007: パスワード空エラー
      * AC-G01-303: パスワードが空の場合、バリデーションエラーが表示される
+     *
+     * 期待メッセージ（日本語）: 「パスワードを入力してください」
      */
     public function test_password_is_required(): void
     {
+        app()->setLocale('ja');
+
         $response = $this->post('/login', [
             'email' => 'test@example.com',
             'password' => '',
@@ -187,8 +211,11 @@ class LoginTest extends TestCase
         $response->assertSessionHasErrors(['password']);
         $this->assertGuest();
 
-        // 期待値: passwordフィールドのバリデーションエラーが存在
-        // Note: エラーメッセージの具体的な文言はlocaleに依存するため、キーの存在のみ検証
+        // エラーメッセージが仕様の日本語文言と完全一致することを確認
+        $errors = session('errors')->get('password');
+        $this->assertNotEmpty($errors);
+        // AC-G01-303: 「パスワードを入力してください」
+        $this->assertSame('パスワードを入力してください', $errors[0]);
     }
 
     /**

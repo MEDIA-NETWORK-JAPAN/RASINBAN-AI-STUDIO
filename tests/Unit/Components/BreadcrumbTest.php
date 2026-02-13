@@ -66,9 +66,9 @@ class BreadcrumbTest extends TestCase
         $view->assertSee('拠点', false);
 
         // 最後のアイテムが <a> タグで囲まれていないことを確認
-        // パターン: "拠点" の後に </a> が続かないことを検証
+        // 正規表現で「拠点」が <a> タグ内に存在しないことを検証（非貪欲マッチで最小範囲に制限）
         $html = $view->getContent();
-        $this->assertStringNotContainsString('<a', substr($html, strrpos($html, '拠点')));
+        $this->assertDoesNotMatchRegularExpression('/<a[^>]*>(?:(?!<\/a>).)*?拠点(?:(?!<\/a>).)*?<\/a>/s', $html);
     }
 
     /**
