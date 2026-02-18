@@ -15,8 +15,6 @@ class MonthInputTest extends TestCase
      */
     public function test_displays_label(): void
     {
-        $this->markTestIncomplete('MonthInputコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-month-input name="target_month" label="対象月" />');
 
         $view->assertSee('対象月', false);
@@ -28,8 +26,6 @@ class MonthInputTest extends TestCase
      */
     public function test_generates_month_input_type(): void
     {
-        $this->markTestIncomplete('MonthInputコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-month-input name="target_month" />');
 
         $view->assertSee('type="month"', false);
@@ -41,8 +37,6 @@ class MonthInputTest extends TestCase
      */
     public function test_displays_initial_value(): void
     {
-        $this->markTestIncomplete('MonthInputコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-month-input name="target_month" value="2024-01" />');
 
         $view->assertSee('value="2024-01"', false);

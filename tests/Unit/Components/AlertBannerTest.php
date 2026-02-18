@@ -15,8 +15,6 @@ class AlertBannerTest extends TestCase
      */
     public function test_warning_type_displays_correctly(): void
     {
-        $this->markTestIncomplete('AlertBannerコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-alert-banner type="warning" message="注意が必要です" />');
 
         $view->assertSee('bg-yellow-50', false);
@@ -31,8 +29,6 @@ class AlertBannerTest extends TestCase
      */
     public function test_error_type_displays_correctly(): void
     {
-        $this->markTestIncomplete('AlertBannerコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-alert-banner type="error" message="エラーが発生しました" />');
 
         $view->assertSee('bg-red-50', false);
@@ -47,8 +43,6 @@ class AlertBannerTest extends TestCase
      */
     public function test_info_type_displays_correctly(): void
     {
-        $this->markTestIncomplete('AlertBannerコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-alert-banner type="info" message="情報があります" />');
 
         $view->assertSee('bg-blue-50', false);
@@ -63,8 +57,6 @@ class AlertBannerTest extends TestCase
      */
     public function test_success_type_displays_correctly(): void
     {
-        $this->markTestIncomplete('AlertBannerコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-alert-banner type="success" message="成功しました" />');
 
         $view->assertSee('bg-green-50', false);
@@ -79,8 +71,6 @@ class AlertBannerTest extends TestCase
      */
     public function test_displays_title_in_bold(): void
     {
-        $this->markTestIncomplete('AlertBannerコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-alert-banner type="warning" title="警告" message="注意が必要です" />');
 
         $view->assertSee('警告', false);
@@ -93,8 +83,6 @@ class AlertBannerTest extends TestCase
      */
     public function test_displays_close_button_when_dismissible(): void
     {
-        $this->markTestIncomplete('AlertBannerコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-alert-banner type="info" message="情報" :dismissible="true" />');
 
         // 閉じるボタン（×アイコンまたはfa-timesアイコン）が表示される

@@ -15,8 +15,6 @@ class EmptyStateTest extends TestCase
      */
     public function test_applies_colspan_attribute(): void
     {
-        $this->markTestIncomplete('EmptyStateコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-empty-state :colspan="5" message="データがありません" />');
 
         $view->assertSee('colspan="5"', false);
@@ -28,8 +26,6 @@ class EmptyStateTest extends TestCase
      */
     public function test_displays_message(): void
     {
-        $this->markTestIncomplete('EmptyStateコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-empty-state message="データがありません" />');
 
         $view->assertSee('データがありません', false);
@@ -41,8 +37,6 @@ class EmptyStateTest extends TestCase
      */
     public function test_displays_custom_icon(): void
     {
-        $this->markTestIncomplete('EmptyStateコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-empty-state message="データがありません" icon="inbox" />');
 
         $view->assertSee('fa-inbox', false);
@@ -56,8 +50,6 @@ class EmptyStateTest extends TestCase
      */
     public function test_displays_default_icon(): void
     {
-        $this->markTestIncomplete('EmptyStateコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-empty-state message="データがありません" />');
 
         $view->assertSee('fa-search', false);

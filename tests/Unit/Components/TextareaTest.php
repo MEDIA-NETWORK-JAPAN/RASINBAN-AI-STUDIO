@@ -15,8 +15,6 @@ class TextareaTest extends TestCase
      */
     public function test_displays_label(): void
     {
-        $this->markTestIncomplete('Textareaコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-textarea name="reason" label="修正理由" />');
 
         $view->assertSee('修正理由', false);
@@ -28,8 +26,6 @@ class TextareaTest extends TestCase
      */
     public function test_applies_rows_attribute(): void
     {
-        $this->markTestIncomplete('Textareaコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-textarea name="reason" :rows="5" />');
 
         $view->assertSee('rows="5"', false);
@@ -41,8 +37,6 @@ class TextareaTest extends TestCase
      */
     public function test_displays_placeholder(): void
     {
-        $this->markTestIncomplete('Textareaコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-textarea name="reason" placeholder="詳細を入力" />');
 
         $view->assertSee('placeholder="詳細を入力"', false);
@@ -54,8 +48,6 @@ class TextareaTest extends TestCase
      */
     public function test_displays_required_indicator(): void
     {
-        $this->markTestIncomplete('Textareaコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-textarea name="reason" label="修正理由" :required="true" />');
 
         $view->assertSee('*必須', false);
@@ -79,8 +71,6 @@ class TextareaTest extends TestCase
      */
     public function test_default_rows_is_three(): void
     {
-        $this->markTestIncomplete('Textareaコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-textarea name="reason" />');
 
         $view->assertSee('rows="3"', false);

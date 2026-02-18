@@ -15,8 +15,6 @@ class PageHeaderTest extends TestCase
      */
     public function test_displays_page_title_with_bold_style(): void
     {
-        $this->markTestIncomplete('PageHeaderコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-page-header title="拠点一覧" />');
 
         $view->assertSee('拠点一覧', false);
@@ -30,8 +28,6 @@ class PageHeaderTest extends TestCase
      */
     public function test_displays_description_with_small_gray_style(): void
     {
-        $this->markTestIncomplete('PageHeaderコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-page-header title="拠点一覧" description="登録拠点の一覧" />');
 
         $view->assertSee('登録拠点の一覧', false);
@@ -45,8 +41,6 @@ class PageHeaderTest extends TestCase
      */
     public function test_displays_action_buttons_on_right(): void
     {
-        $this->markTestIncomplete('PageHeaderコンポーネント実装後に有効化');
-
         $view = $this->blade('
             <x-page-header title="拠点一覧">
                 <x-slot name="actions">
@@ -64,13 +58,9 @@ class PageHeaderTest extends TestCase
      */
     public function test_description_not_displayed_when_not_provided(): void
     {
-        $this->markTestIncomplete('PageHeaderコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-page-header title="拠点一覧" />');
 
-        // 説明文要素が存在しない、または空であることを確認
-        $html = $view->getContent();
-        // 説明文用のクラス（text-xs text-gray-500など）が存在しないことを確認
-        $this->assertStringNotContainsString('text-xs text-gray-500', $html);
+        // 説明文用のクラスが存在しないことを確認
+        $view->assertDontSee('text-xs text-gray-500', false);
     }
 }

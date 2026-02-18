@@ -15,8 +15,6 @@ class SidebarTest extends TestCase
      */
     public function test_displays_logo_text(): void
     {
-        $this->markTestIncomplete('Sidebarコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-sidebar />');
 
         $view->assertSee('Gateway Admin', false);
@@ -28,8 +26,6 @@ class SidebarTest extends TestCase
      */
     public function test_displays_logo_icon(): void
     {
-        $this->markTestIncomplete('Sidebarコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-sidebar />');
 
         $view->assertSee('fa-network-wired', false);
@@ -41,8 +37,6 @@ class SidebarTest extends TestCase
      */
     public function test_displays_navigation_items(): void
     {
-        $this->markTestIncomplete('Sidebarコンポーネント実装後に有効化');
-
         $view = $this->blade('
             <x-sidebar>
                 <x-slot name="navigation">
@@ -72,8 +66,6 @@ class SidebarTest extends TestCase
      */
     public function test_desktop_always_visible(): void
     {
-        $this->markTestIncomplete('Sidebarコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-sidebar />');
 
         $view->assertSee('lg:static', false);
@@ -86,8 +78,6 @@ class SidebarTest extends TestCase
      */
     public function test_mobile_hidden_by_default(): void
     {
-        $this->markTestIncomplete('Sidebarコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-sidebar />');
 
         $view->assertSee('-translate-x-full', false);
@@ -111,8 +101,6 @@ class SidebarTest extends TestCase
      */
     public function test_sidebar_width_is_w64(): void
     {
-        $this->markTestIncomplete('Sidebarコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-sidebar />');
 
         $view->assertSee('w-64', false);

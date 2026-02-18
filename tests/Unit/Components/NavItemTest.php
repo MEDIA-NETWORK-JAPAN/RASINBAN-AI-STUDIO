@@ -15,8 +15,6 @@ class NavItemTest extends TestCase
      */
     public function test_sets_link_destination(): void
     {
-        $this->markTestIncomplete('NavItemコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-nav-item href="/admin/teams" label="拠点管理" icon="fa-building" />');
 
         $view->assertSee('href="/admin/teams"', false);
@@ -28,8 +26,6 @@ class NavItemTest extends TestCase
      */
     public function test_displays_fontawesome_icon(): void
     {
-        $this->markTestIncomplete('NavItemコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-nav-item href="/admin/teams" label="拠点管理" icon="fa-building" />');
 
         $view->assertSee('fa-building', false);
@@ -41,8 +37,6 @@ class NavItemTest extends TestCase
      */
     public function test_displays_menu_label(): void
     {
-        $this->markTestIncomplete('NavItemコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-nav-item href="/admin/teams" label="拠点・ユーザー管理" icon="fa-building" />');
 
         $view->assertSee('拠点・ユーザー管理', false);
@@ -54,8 +48,6 @@ class NavItemTest extends TestCase
      */
     public function test_inactive_state_applies_gray_styles(): void
     {
-        $this->markTestIncomplete('NavItemコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-nav-item href="/admin/teams" label="拠点管理" icon="fa-building" :active="false" />');
 
         $view->assertSee('text-gray-600', false);
@@ -68,8 +60,6 @@ class NavItemTest extends TestCase
      */
     public function test_active_state_applies_indigo_styles(): void
     {
-        $this->markTestIncomplete('NavItemコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-nav-item href="/admin/teams" label="拠点管理" icon="fa-building" :active="true" />');
 
         $view->assertSee('bg-indigo-50', false);

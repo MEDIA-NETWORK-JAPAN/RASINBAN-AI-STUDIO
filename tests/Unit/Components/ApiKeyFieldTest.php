@@ -15,8 +15,6 @@ class ApiKeyFieldTest extends TestCase
      */
     public function test_default_state_masks_api_key(): void
     {
-        $this->markTestIncomplete('ApiKeyFieldコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-api-key-field value="sk-test1234567890" label="APIキー" />');
 
         $view->assertSee('type="password"', false);
@@ -29,8 +27,6 @@ class ApiKeyFieldTest extends TestCase
      */
     public function test_displays_label(): void
     {
-        $this->markTestIncomplete('ApiKeyFieldコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-api-key-field value="sk-test" label="APIキー" />');
 
         $view->assertSee('APIキー', false);
@@ -42,8 +38,6 @@ class ApiKeyFieldTest extends TestCase
      */
     public function test_displays_toggle_visibility_button(): void
     {
-        $this->markTestIncomplete('ApiKeyFieldコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-api-key-field value="sk-test" label="APIキー" />');
 
         // デフォルトはマスク状態なので fa-eye が表示される
@@ -56,8 +50,6 @@ class ApiKeyFieldTest extends TestCase
      */
     public function test_displays_copy_button(): void
     {
-        $this->markTestIncomplete('ApiKeyFieldコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-api-key-field value="sk-test" label="APIキー" />');
 
         $view->assertSee('fa-copy', false);
@@ -69,8 +61,6 @@ class ApiKeyFieldTest extends TestCase
      */
     public function test_input_field_is_readonly(): void
     {
-        $this->markTestIncomplete('ApiKeyFieldコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-api-key-field value="sk-test" label="APIキー" />');
 
         $view->assertSee('readonly', false);
@@ -118,8 +108,6 @@ class ApiKeyFieldTest extends TestCase
      */
     public function test_field_applies_mono_font_and_gray_background(): void
     {
-        $this->markTestIncomplete('ApiKeyFieldコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-api-key-field value="sk-test" label="APIキー" />');
 
         $view->assertSee('font-mono', false);
