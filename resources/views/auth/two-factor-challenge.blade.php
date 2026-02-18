@@ -1,58 +1,84 @@
-<x-guest-layout>
-    <x-authentication-card>
-        <x-slot name="logo">
-            <x-authentication-card-logo />
-        </x-slot>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>二段階認証 - {{ config('app.name') }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="bg-gradient-to-br from-indigo-100 to-blue-50 min-h-screen flex items-center justify-center p-4">
 
-        <div x-data="{ recovery: false }">
-            <div class="mb-4 text-sm text-gray-600" x-show="! recovery">
-                {{ __('Please confirm access to your account by entering the authentication code provided by your authenticator application.') }}
+<div class="w-full max-w-md">
+    {{-- Logo / Header --}}
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4">
+            <i class="fas fa-shield-alt text-white text-2xl"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-1">二段階認証</h1>
+        <p class="text-gray-500 text-sm">管理者メールに送信された認証コードを入力してください</p>
+    </div>
+
+    <div class="bg-white shadow-xl rounded-2xl p-8">
+        {{-- Errors --}}
+        @if ($errors->any())
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                <i class="fas fa-exclamation-circle text-red-600 mt-0.5"></i>
+                <ul class="text-sm text-red-800 space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form method="POST" action="/two-factor-challenge">
+            @csrf
+
+            <div class="mb-6">
+                <label for="code" class="block text-sm font-medium text-gray-700 mb-2">
+                    認証コード
+                </label>
+                <input
+                    type="text"
+                    id="code"
+                    name="code"
+                    inputmode="numeric"
+                    maxlength="6"
+                    placeholder="000000"
+                    autofocus
+                    autocomplete="one-time-code"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-center text-xl tracking-widest font-mono"
+                />
             </div>
 
-            <div class="mb-4 text-sm text-gray-600" x-cloak x-show="recovery">
-                {{ __('Please confirm access to your account by entering one of your emergency recovery codes.') }}
-            </div>
+            <button
+                type="submit"
+                class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition mb-3"
+            >
+                認証する
+            </button>
+        </form>
 
-            <x-validation-errors class="mb-4" />
-
-            <form method="POST" action="{{ route('two-factor.login') }}">
+        {{-- Resend + Logout --}}
+        <div class="flex gap-3 mt-2">
+            <form method="POST" action="/two-factor-challenge/resend" class="flex-1">
                 @csrf
+                <button type="submit"
+                    class="w-full py-2 px-4 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition">
+                    再送信
+                </button>
+            </form>
 
-                <div class="mt-4" x-show="! recovery">
-                    <x-label for="code" value="{{ __('Code') }}" />
-                    <x-input id="code" class="block mt-1 w-full" type="text" inputmode="numeric" name="code" autofocus x-ref="code" autocomplete="one-time-code" />
-                </div>
-
-                <div class="mt-4" x-cloak x-show="recovery">
-                    <x-label for="recovery_code" value="{{ __('Recovery Code') }}" />
-                    <x-input id="recovery_code" class="block mt-1 w-full" type="text" name="recovery_code" x-ref="recovery_code" autocomplete="one-time-code" />
-                </div>
-
-                <div class="flex items-center justify-end mt-4">
-                    <button type="button" class="text-sm text-gray-600 hover:text-gray-900 underline cursor-pointer"
-                                    x-show="! recovery"
-                                    x-on:click="
-                                        recovery = true;
-                                        $nextTick(() => { $refs.recovery_code.focus() })
-                                    ">
-                        {{ __('Use a recovery code') }}
-                    </button>
-
-                    <button type="button" class="text-sm text-gray-600 hover:text-gray-900 underline cursor-pointer"
-                                    x-cloak
-                                    x-show="recovery"
-                                    x-on:click="
-                                        recovery = false;
-                                        $nextTick(() => { $refs.code.focus() })
-                                    ">
-                        {{ __('Use an authentication code') }}
-                    </button>
-
-                    <x-button class="ms-4">
-                        {{ __('Log in') }}
-                    </x-button>
-                </div>
+            <form method="POST" action="/logout" class="flex-1">
+                @csrf
+                <button type="submit"
+                    class="w-full py-2 px-4 border border-red-200 rounded-lg text-sm text-red-600 hover:bg-red-50 transition">
+                    ログアウト
+                </button>
             </form>
         </div>
-    </x-authentication-card>
-</x-guest-layout>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,13 +1,43 @@
-<x-guest-layout>
-    <x-authentication-card>
-        <x-slot name="logo">
-            <x-authentication-card-logo />
-        </x-slot>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ログイン - {{ config('app.name') }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="bg-gradient-to-br from-indigo-100 to-blue-50 min-h-screen flex items-center justify-center p-4">
 
-        <x-validation-errors class="mb-4" />
+<div class="w-full max-w-md">
+    {{-- Logo / Header --}}
+    <div class="text-center mb-8">
+        <div
+            aria-label="Dify Gateway Logo"
+            class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4"
+        >
+            <i class="fas fa-network-wired text-white text-2xl"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-1">Dify Gateway</h1>
+        <p class="text-gray-500 text-sm">{{ config('app.name') }}</p>
+    </div>
+
+    {{-- Login card --}}
+    <div class="bg-white shadow-xl rounded-2xl p-8">
+
+        {{-- Validation errors --}}
+        @if ($errors->any())
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                <i class="fas fa-exclamation-circle text-red-600 mt-0.5"></i>
+                <ul class="text-sm text-red-800 space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         @session('status')
-            <div class="mb-4 font-medium text-sm text-green-600">
+            <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
                 {{ $value }}
             </div>
         @endsession
@@ -15,34 +45,51 @@
         <form method="POST" action="{{ route('login') }}">
             @csrf
 
-            <div>
-                <x-label for="email" value="{{ __('Email') }}" />
-                <x-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            </div>
-
-            <div class="mt-4">
-                <x-label for="password" value="{{ __('Password') }}" />
-                <x-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="current-password" />
-            </div>
-
-            <div class="block mt-4">
-                <label for="remember_me" class="flex items-center">
-                    <x-checkbox id="remember_me" name="remember" />
-                    <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
+            {{-- Email --}}
+            <div class="mb-4">
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                    メールアドレス
                 </label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value="{{ old('email') }}"
+                    placeholder="user@example.com"
+                    required
+                    autofocus
+                    autocomplete="email"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm"
+                />
             </div>
 
-            <div class="flex items-center justify-end mt-4">
-                @if (Route::has('password.request'))
-                    <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                        {{ __('Forgot your password?') }}
-                    </a>
-                @endif
-
-                <x-button class="ms-4">
-                    {{ __('Log in') }}
-                </x-button>
+            {{-- Password --}}
+            <div class="mb-6">
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                    パスワード
+                </label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="パスワードを入力"
+                    required
+                    autocomplete="current-password"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm"
+                />
             </div>
+
+            {{-- Submit --}}
+            <button
+                type="submit"
+                class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition flex items-center justify-center gap-2"
+            >
+                <i class="fas fa-sign-in-alt"></i>
+                ログイン
+            </button>
         </form>
-    </x-authentication-card>
-</x-guest-layout>
+    </div>
+</div>
+
+</body>
+</html>
