@@ -15,7 +15,7 @@
             <i class="fas fa-shield-alt text-white text-2xl"></i>
         </div>
         <h1 class="text-2xl font-bold text-gray-900 mb-1">二段階認証</h1>
-        <p class="text-gray-500 text-sm">管理者メールに送信された認証コードを入力してください</p>
+        <p class="text-gray-500 text-sm">{{ $adminName }} 宛に6桁の認証コードを送信しました</p>
     </div>
 
     <div class="bg-white shadow-xl rounded-2xl p-8">

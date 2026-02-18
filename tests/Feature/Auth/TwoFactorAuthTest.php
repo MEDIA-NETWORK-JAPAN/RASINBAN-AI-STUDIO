@@ -41,6 +41,7 @@ class TwoFactorAuthTest extends TestCase
         ])->get('/two-factor-challenge');
 
         $response->assertStatus(200);
+        $response->assertSee($admin->name.' 宛に6桁の認証コードを送信しました', false);
         $response->assertSee('認証コード', false);
         $response->assertSee('認証する', false);
         $response->assertSee('再送信', false);
