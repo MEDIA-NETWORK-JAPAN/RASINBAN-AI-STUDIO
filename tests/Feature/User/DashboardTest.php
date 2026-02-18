@@ -3,7 +3,6 @@
 namespace Tests\Feature\User;
 
 use App\Models\MonthlyApiUsage;
-use App\Models\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -99,44 +98,49 @@ class DashboardTest extends TestCase
     }
 
     /**
-     * TC-U01-006: team_idパラメータ無視 - /dashboard?team_id=999 へアクセスしても自チームのデータのみ表示
+     * TC-U01-006: user_idパラメータ無視 - /dashboard?user_id=999 へアクセスしても自ユーザーのデータのみ表示
      */
-    public function test_ignores_team_id_parameter(): void
+    public function test_ignores_user_id_parameter(): void
     {
-        $user = $this->createUserWithTeam([
-            'name' => 'My Team',
-            'is_admin' => false,
-        ], ['name' => 'My Team']);
+        $user = $this->createUserWithTeam(['is_admin' => false]);
+        $otherUser = User::factory()->withPersonalTeam()->create();
 
-        $otherTeam = Team::factory()->create(['name' => 'Other Team']);
+        // Create usage data for other user (should not appear)
+        MonthlyApiUsage::factory()->forUser($otherUser)->create([
+            'usage_month' => now()->format('Y-m'),
+            'request_count' => 999,
+        ]);
 
-        // Try to access dashboard with other team's ID
-        $response = $this->actingAs($user)->get('/dashboard?team_id='.$otherTeam->id);
+        // Try to access dashboard with another user's ID
+        $response = $this->actingAs($user)->get('/dashboard?user_id='.$otherUser->id);
 
         $response->assertStatus(200);
-        $response->assertSee('My Team', false);
-        $response->assertDontSee('Other Team', false);
+        $response->assertDontSee('999', false);
     }
 
     /**
-     * TC-U01-007: auth()->user()でのデータ取得 - ログインユーザー自身のデータのみ取得される
+     * TC-U01-007: auth()->user()でのデータ取得 - ログインユーザー自身の利用実績のみ表示される
      */
-    public function test_uses_current_team_id_for_data_retrieval(): void
+    public function test_uses_authenticated_user_for_data_retrieval(): void
     {
-        $user = $this->createUserWithTeam([
-            'is_admin' => false,
-        ]);
+        $user = $this->createUserWithTeam(['is_admin' => false]);
+        $otherUser = User::factory()->withPersonalTeam()->create();
 
         // Create usage for current user
         MonthlyApiUsage::factory()->forUser($user)->create([
             'usage_month' => now()->format('Y-m'),
-            'request_count' => 100,
+            'request_count' => 200,
+        ]);
+
+        // Create usage for other user (should not appear)
+        MonthlyApiUsage::factory()->forUser($otherUser)->create([
+            'usage_month' => now()->format('Y-m'),
+            'request_count' => 999,
         ]);
 
         $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertStatus(200);
-        // Verify that user's own data is used
-        $this->assertEquals($user->id, $user->id);
+        $response->assertDontSee('999', false);
     }
 }

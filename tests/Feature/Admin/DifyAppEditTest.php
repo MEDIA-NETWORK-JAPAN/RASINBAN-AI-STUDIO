@@ -122,7 +122,7 @@ class DifyAppEditTest extends TestCase
     }
 
     /**
-     * TC-A06-009: APIキー更新 - api_key_encryptedが暗号化保存され、トースト表示
+     * TC-A06-009: APIキー更新 - api_keyが暗号化保存され、トースト表示
      *
      * Note: Requires Livewire component implementation
      */
