@@ -141,6 +141,7 @@ class DashboardTest extends TestCase
         $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertStatus(200);
-        $response->assertDontSee('999', false);
+        $response->assertSee('200', false);     // 自ユーザーのデータは表示される
+        $response->assertDontSee('999', false); // 他ユーザーのデータは非表示
     }
 }
