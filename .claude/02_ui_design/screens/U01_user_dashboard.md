@@ -55,7 +55,7 @@
 | アプリ名 | `dify_app.name`（アイコン付き） |
 | 利用状況 | 今月の利用回数 / 月間上限 + ProgressBar |
 | 利用率 | パーセンテージ表示 |
-| 最終更新 | `updated_at`（相対時刻） |
+| 最終リクエスト | `last_request_at`（相対時刻） |
 
 ### 行スタイル
 
@@ -78,14 +78,14 @@ public function getCurrentMonthUsagesProperty()
 {
     return MonthlyApiUsage::query()
         ->where('user_id', auth()->id())  // 必ずログインユーザーのIDで絞り込む
-        ->where('year_month', now()->format('Y-m'))
+        ->where('usage_month', now()->format('Y-m'))
         ->with(['difyApp'])
         ->get();
 }
 
 public function getTotalUsageProperty(): int
 {
-    return $this->currentMonthUsages->sum('count');
+    return $this->currentMonthUsages->sum('request_count');
 }
 
 public function getPlanLimitProperty(): int
@@ -98,7 +98,7 @@ public function getUsagePercentageProperty(): float
     if ($this->planLimit === 0) {
         return 0;
     }
-    return min(100, round(($this->totalUsage / $this->planLimit) * 100, 1));
+    return round(($this->totalUsage / $this->planLimit) * 100, 1);
 }
 ```
 

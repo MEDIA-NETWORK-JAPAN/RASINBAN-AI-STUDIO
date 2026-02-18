@@ -31,7 +31,7 @@
 ### 1. ヘッダーエリア
 
 - タイトル: 「利用状況・実績管理」
-- 説明: 「各拠点の月次API利用回数を確認・修正します。」
+- 説明: 「各ユーザーの月次API利用回数を確認・修正します。」
 - アクション: 再読込ボタン、CSV出力ボタン
 
 ### 2. フィルタバー
@@ -47,11 +47,11 @@
 
 | カラム | 内容 | 説明 |
 |--------|------|------|
-| 年月 | `year_month` | YYYY-MM形式 |
+| 対象月 | `usage_month` | YYYY-MM形式 |
 | ユーザー/プラン | `user.name`（太字）+ `team.name`（サブテキスト）+ `user.plan.name` | 超過時はバッジ表示 |
 | 利用アプリ | `dify_app.name` | アイコン付き |
-| 利用状況 | 実績/上限 + ProgressBar | 色分け表示 |
-| 最終更新 | `updated_at` | YYYY-MM-DD HH:mm |
+| 利用状況 | `request_count`/上限 + ProgressBar | 色分け表示 |
+| 最終リクエスト | `last_request_at` | YYYY-MM-DD HH:mm（NULLの場合は「-」表示） |
 | 操作 | 修正ボタン | A08モーダルを開く |
 
 ### 行スタイル
@@ -78,15 +78,15 @@ public function mount(): void
 public function getUsagesProperty()
 {
     return MonthlyApiUsage::query()
-        ->when($this->month, fn($q) => $q->where('year_month', $this->month))
+        ->when($this->month, fn($q) => $q->where('usage_month', $this->month))
         ->when($this->userSearch, fn($q) => $q
             ->whereHas('user', fn($q) => $q->where('name', 'like', "%{$this->userSearch}%"))
             ->orWhereHas('team', fn($q) => $q->where('name', 'like', "%{$this->userSearch}%"))
         )
         ->when($this->appFilter, fn($q) => $q->where('dify_app_id', $this->appFilter))
-        ->when($this->overLimitOnly, fn($q) => $q->whereRaw('count > monthly_limit'))
+        ->when($this->overLimitOnly, fn($q) => $q->whereRaw('request_count > monthly_limit'))
         ->with(['user.plan', 'user.currentTeam', 'team', 'difyApp'])
-        ->orderByDesc('count')
+        ->orderByDesc('request_count')
         ->paginate(20);
 }
 ```
@@ -110,7 +110,7 @@ public function getUsagesProperty()
 
 **CSVヘッダー:**
 ```
-年月,ユーザー名,拠点名,プラン,アプリ名,利用回数,月間上限,利用率(%),最終更新
+対象月,ユーザー名,拠点名,プラン,アプリ名,利用回数,月間上限,利用率(%),最終リクエスト
 ```
 
 **データ取得:**
@@ -152,15 +152,15 @@ class UsageList extends Component
     {
         // 現在のフィルタ条件を適用したデータを取得
         $usages = MonthlyApiUsage::query()
-            ->when($this->month, fn($q) => $q->where('year_month', $this->month))
+            ->when($this->month, fn($q) => $q->where('usage_month', $this->month))
             ->when($this->userSearch, fn($q) => $q
                 ->whereHas('user', fn($q) => $q->where('name', 'like', "%{$this->userSearch}%"))
                 ->orWhereHas('team', fn($q) => $q->where('name', 'like', "%{$this->userSearch}%"))
             )
             ->when($this->appFilter, fn($q) => $q->where('dify_app_id', $this->appFilter))
-            ->when($this->overLimitOnly, fn($q) => $q->whereRaw('count > monthly_limit'))
+            ->when($this->overLimitOnly, fn($q) => $q->whereRaw('request_count > monthly_limit'))
             ->with(['user.plan', 'user.currentTeam', 'team', 'difyApp'])
-            ->orderByDesc('count')
+            ->orderByDesc('request_count')
             ->get();
 
         return response()->streamDownload(function () use ($usages) {
@@ -171,7 +171,7 @@ class UsageList extends Component
 
             // CSVヘッダー
             fputcsv($handle, [
-                '年月',
+                '対象月',
                 'ユーザー名',
                 '拠点名',
                 'プラン',
@@ -179,25 +179,25 @@ class UsageList extends Component
                 '利用回数',
                 '月間上限',
                 '利用率(%)',
-                '最終更新',
+                '最終リクエスト',
             ]);
 
             // データ行
             foreach ($usages as $usage) {
                 $percentage = $usage->monthly_limit > 0
-                    ? round(($usage->count / $usage->monthly_limit) * 100, 1)
+                    ? round(($usage->request_count / $usage->monthly_limit) * 100, 1)
                     : 0;
 
                 fputcsv($handle, [
-                    $usage->year_month,
+                    $usage->usage_month,
                     $usage->user->name ?? '',
                     $usage->team->name ?? '',
                     $usage->user?->plan->name ?? '',
                     $usage->difyApp->name ?? '削除されたアプリ',
-                    $usage->count,
+                    $usage->request_count,
                     $usage->monthly_limit,
                     $percentage,
-                    $usage->updated_at->format('Y-m-d H:i:s'),
+                    $usage->last_request_at?->format('Y-m-d H:i:s') ?? '',
                 ]);
             }
 

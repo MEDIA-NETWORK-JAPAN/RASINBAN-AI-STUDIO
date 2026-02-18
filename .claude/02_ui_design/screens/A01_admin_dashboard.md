@@ -32,7 +32,7 @@
 | カード | データ | アイコン | 色 |
 |--------|--------|---------|-----|
 | 契約拠点数 | `teams.count()` | `fa-building` | indigo |
-| 今月の総リクエスト | `monthly_api_usages.sum('count')` | `fa-exchange-alt` | blue |
+| 今月の総リクエスト | `monthly_api_usages.sum('request_count')` | `fa-exchange-alt` | blue |
 | 稼働Difyアプリ | `dify_apps.where('is_active', true).count()` | `fa-robot` | green |
 
 ### 2. 利用率の高いユーザー一覧
@@ -57,7 +57,7 @@ public function index()
     return view('admin.dashboard', [
         'teamCount' => Team::count(),
         'teamCountDiff' => Team::whereMonth('created_at', now()->subMonth())->count(),
-        'totalRequests' => MonthlyApiUsage::currentMonth()->sum('count'),
+        'totalRequests' => MonthlyApiUsage::currentMonth()->sum('request_count'),
         'requestLimit' => config('app.system_request_limit'),
         'activeApps' => DifyApp::where('is_active', true)->count(),
         'topUsageUsers' => User::withCurrentMonthUsage()
