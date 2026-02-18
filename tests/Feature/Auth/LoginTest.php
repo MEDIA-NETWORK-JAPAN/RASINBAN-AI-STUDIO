@@ -95,7 +95,7 @@ class LoginTest extends TestCase
 
     /**
      * TC-G01-003: 一般ユーザーログイン
-     * AC-G01-203: 一般ユーザー（is_admin=false）がログインした場合、U01（拠点ダッシュボード）へリダイレクトされる
+     * AC-G01-203: 一般ユーザー（is_admin=false）がログインした場合、U01（ユーザーダッシュボード）へリダイレクトされる
      */
     public function test_regular_user_redirected_to_dashboard(): void
     {

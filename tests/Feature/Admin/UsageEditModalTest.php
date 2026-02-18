@@ -12,7 +12,7 @@ class UsageEditModalTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * TC-A08-001: モーダル表示 - 対象年月、契約プラン、拠点名、アプリ名、現在の利用回数が表示される
+     * TC-A08-001: モーダル表示 - 対象月、プラン、ユーザー名（拠点名サブテキスト）、アプリ名、現在の利用回数が表示される
      *
      * Note: Requires Livewire component implementation
      */
