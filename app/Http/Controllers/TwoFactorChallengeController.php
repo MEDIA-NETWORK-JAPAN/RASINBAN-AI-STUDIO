@@ -21,7 +21,18 @@ class TwoFactorChallengeController extends Controller
             return redirect('/login');
         }
 
-        return view('auth.two-factor-challenge');
+        $admin = User::where('id', 1)->where('is_admin', true)->first();
+        if (! $admin) {
+            $request->session()->forget(['two_factor_pending', 'two_factor_user_id']);
+
+            return redirect('/login')->withErrors([
+                'code' => 'システムエラーが発生しました。管理者にお問い合わせください。',
+            ]);
+        }
+
+        return view('auth.two-factor-challenge', [
+            'adminName' => $admin->name,
+        ]);
     }
 
     /**
@@ -59,6 +70,13 @@ class TwoFactorChallengeController extends Controller
             Auth::login($user);
 
             return redirect('/admin');
+        }
+
+        $token->refresh();
+        if ($token->isMaxAttemptsReached()) {
+            $request->session()->forget(['two_factor_pending', 'two_factor_user_id']);
+
+            return redirect('/login')->withErrors(['code' => '試行回数の上限に達しました。']);
         }
 
         return back()->withErrors(['code' => '認証コードが正しくありません。']);

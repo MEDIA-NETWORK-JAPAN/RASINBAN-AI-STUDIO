@@ -6,6 +6,7 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Actions\Fortify\RedirectAdminToTwoFactor;
 use App\Actions\Fortify\ValidateLoginEmailFormat;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -44,6 +45,7 @@ class FortifyServiceProvider extends ServiceProvider
                 ValidateLoginEmailFormat::class,
                 AttemptToAuthenticate::class,
                 PrepareAuthenticatedSession::class,
+                RedirectAdminToTwoFactor::class,
             ];
         });
 
