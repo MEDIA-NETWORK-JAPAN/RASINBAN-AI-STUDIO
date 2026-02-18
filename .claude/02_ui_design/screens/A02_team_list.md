@@ -41,8 +41,7 @@
 
 | フィールド | タイプ | 説明 |
 |-----------|--------|------|
-| 検索 | TextInput | 拠点名・担当者名の部分一致検索 (debounce 300ms) |
-| プランフィルタ | SelectInput | 全て/Light/Standard/Pro |
+| 検索 | TextInput | 拠点名の部分一致検索 (debounce 300ms) |
 | 制限超過フィルタ | ToggleSwitch | ONで制限超過拠点のみ表示 |
 
 ### 3. 拠点一覧テーブル
@@ -50,9 +49,10 @@
 | カラム | 内容 | ソート |
 |--------|------|--------|
 | 拠点名 | `team.name` | o |
-| プラン / 利用率 | `team.plan.name` + 今月利用数/上限 + プログレスバー | - |
 | 管理者 | オーナー名 + メールアドレス (グレー表示) | - |
 | 最終アクセス | `team.last_accessed_at` (相対時刻) | o |
+
+※ プランはユーザー単位（`users.plan_id`）のためテーブル列から削除
 
 ### 4. 新規作成モーダル
 
@@ -60,27 +60,29 @@
 | フィールド | タイプ | 必須 | 説明 |
 |-----------|--------|------|------|
 | 拠点名 | TextInput | Yes | 例: 福岡営業所 |
-| 初期契約プラン | SelectInput | Yes | Light/Standard/Pro |
-| 拠点接続用APIキー | TextInput (readonly) + ボタン | - | 自動生成、再生成ボタン付き |
+| 管理者名 | TextInput | Yes | 初期管理者ユーザーの名前 |
+| 管理者メール | TextInput (email) | Yes | 初期管理者ユーザーのメールアドレス |
+| 初期パスワード | TextInput (password) | Yes | 10文字以上 |
+| 初期プラン | SelectInput | Yes | 管理者ユーザーのプラン: Light/Standard/Pro |
+| 管理者APIキー | TextInput (readonly) + ボタン | - | 自動生成（`user_api_keys`に保存）、再生成ボタン付き |
 
 ## データ取得
 
 ```php
 // Livewire Component
 public $search = '';
-public $planFilter = '';
 public $overLimitFilter = false;
 
 public function getTeamsProperty()
 {
     return Team::query()
-        ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%")
-            ->orWhereHas('owner', fn($q) => $q->where('name', 'like', "%{$this->search}%")))
-        ->when($this->planFilter, fn($q) => $q->where('plan_id', $this->planFilter))
-        ->when($this->overLimitFilter, fn($q) => $q->whereHas('currentMonthUsage', function($q) {
-            $q->whereRaw('total_requests > plan_limits.monthly_limit');
+        ->when($this->search, fn($q) => $q->where('name', 'like', "%{$this->search}%"))
+        ->when($this->overLimitFilter, fn($q) => $q->whereHas('users', function($q) {
+            $q->whereHas('monthlyApiUsages', function($q) {
+                $q->whereRaw('count > monthly_limit');
+            });
         }))
-        ->with(['plan', 'owner', 'currentMonthUsage'])
+        ->with(['owner'])
         ->orderBy('name')
         ->paginate(10);
 }
@@ -95,7 +97,7 @@ public function getTeamsProperty()
 | 制限超過トグル | ON/OFF切替で即時フィルタリング |
 | 新規作成ボタン | モーダル表示 |
 | APIキー再生成ボタン | ランダムキー生成 (モーダル内) |
-| モーダル保存 | Team作成 + TeamApiKey作成 → 一覧更新 |
+| モーダル保存 | Team作成 + 管理者User作成 + UserApiKey作成 → 一覧更新 |
 | 拠点名クリック | A03へ遷移 |
 | ページネーション | ページ切替 |
 
@@ -108,48 +110,66 @@ class TeamList extends Component
     use WithPagination;
 
     public $search = '';
-    public $planFilter = '';
     public $overLimitFilter = false;
 
     // 新規作成モーダル
     public $showCreateModal = false;
-    public $newTeam = [
+    public $newTeam = ['name' => ''];
+    public $newAdmin = [
         'name' => '',
+        'email' => '',
+        'password' => '',
         'plan_id' => '',
     ];
     public $newApiKey = '';
 
-    protected $queryString = ['search', 'planFilter', 'overLimitFilter'];
+    protected $queryString = ['search', 'overLimitFilter'];
 
-    public function updatingSearch()
+    public function updatingSearch(): void
     {
         $this->resetPage();
     }
 
-    public function generateApiKey()
+    public function generateApiKey(): void
     {
         $this->newApiKey = Str::random(64);
     }
 
-    public function openCreateModal()
+    public function openCreateModal(): void
     {
         $this->showCreateModal = true;
         $this->generateApiKey(); // 初回自動生成
     }
 
-    public function createTeam()
+    public function createTeam(): void
     {
         $this->validate([
             'newTeam.name' => 'required|string|max:255',
-            'newTeam.plan_id' => 'required|exists:plans,id',
+            'newAdmin.name' => 'required|string|max:255',
+            'newAdmin.email' => 'required|email|unique:users,email',
+            'newAdmin.password' => 'required|string|min:10',
+            'newAdmin.plan_id' => 'required|exists:plans,id',
             'newApiKey' => 'required|string|size:64',
         ]);
 
-        // Team + TeamApiKey作成処理
-        // ...
+        // Team + User + UserApiKey作成処理
+        DB::transaction(function () {
+            $team = Team::create(['name' => $this->newTeam['name']]);
+            $user = $team->users()->create([
+                'name' => $this->newAdmin['name'],
+                'email' => $this->newAdmin['email'],
+                'password' => Hash::make($this->newAdmin['password']),
+                'plan_id' => $this->newAdmin['plan_id'],
+            ]);
+            $user->apiKeys()->create([
+                'key_hash' => hash('sha256', $this->newApiKey),
+                'key_encrypted' => encrypt($this->newApiKey),
+                'is_active' => true,
+            ]);
+        });
 
         $this->showCreateModal = false;
-        $this->reset('newTeam', 'newApiKey');
+        $this->reset('newTeam', 'newAdmin', 'newApiKey');
         $this->dispatch('toast', type: 'success', message: '拠点を作成しました');
     }
 }
@@ -160,5 +180,8 @@ class TeamList extends Component
 | フィールド | ルール |
 |-----------|--------|
 | 拠点名 | required, string, max:255 |
-| プラン | required, exists:plans,id |
+| 管理者名 | required, string, max:255 |
+| 管理者メール | required, email, unique:users,email |
+| 初期パスワード | required, string, min:10 |
+| プラン（管理者用） | required, exists:plans,id |
 | APIキー | required, string, size:64 |

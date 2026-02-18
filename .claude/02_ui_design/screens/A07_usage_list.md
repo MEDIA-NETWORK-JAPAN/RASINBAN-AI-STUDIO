@@ -39,7 +39,7 @@
 | フィールド | タイプ | 説明 |
 |-----------|--------|------|
 | 対象年月 | MonthInput | YYYY-MM形式 |
-| 拠点名 | TextInput | 部分一致検索 |
+| ユーザー名/拠点名 | TextInput | 部分一致検索（`users.name` または `teams.name` で検索） |
 | Difyアプリ | SelectInput | 全て/各アプリ |
 | 制限超過のみ | ToggleSwitch | 超過データのみ表示 |
 
@@ -48,7 +48,7 @@
 | カラム | 内容 | 説明 |
 |--------|------|------|
 | 年月 | `year_month` | YYYY-MM形式 |
-| 拠点名/プラン | `team.name` + `plan.name` | 超過時はバッジ表示 |
+| ユーザー/プラン | `user.name`（太字）+ `team.name`（サブテキスト）+ `user.plan.name` | 超過時はバッジ表示 |
 | 利用アプリ | `dify_app.name` | アイコン付き |
 | 利用状況 | 実績/上限 + ProgressBar | 色分け表示 |
 | 最終更新 | `updated_at` | YYYY-MM-DD HH:mm |
@@ -66,11 +66,11 @@
 ```php
 // Livewire Component
 public $month;
-public $teamSearch = '';
+public $userSearch = '';  // ユーザー名または拠点名で検索
 public $appFilter = '';
 public $overLimitOnly = false;
 
-public function mount()
+public function mount(): void
 {
     $this->month = now()->format('Y-m');
 }
@@ -79,12 +79,13 @@ public function getUsagesProperty()
 {
     return MonthlyApiUsage::query()
         ->when($this->month, fn($q) => $q->where('year_month', $this->month))
-        ->when($this->teamSearch, fn($q) => $q->whereHas('team', fn($q) =>
-            $q->where('name', 'like', "%{$this->teamSearch}%")
-        ))
+        ->when($this->userSearch, fn($q) => $q
+            ->whereHas('user', fn($q) => $q->where('name', 'like', "%{$this->userSearch}%"))
+            ->orWhereHas('team', fn($q) => $q->where('name', 'like', "%{$this->userSearch}%"))
+        )
         ->when($this->appFilter, fn($q) => $q->where('dify_app_id', $this->appFilter))
         ->when($this->overLimitOnly, fn($q) => $q->whereRaw('count > monthly_limit'))
-        ->with(['team.plan', 'difyApp'])
+        ->with(['user.plan', 'user.currentTeam', 'team', 'difyApp'])
         ->orderByDesc('count')
         ->paginate(20);
 }
@@ -95,7 +96,7 @@ public function getUsagesProperty()
 | 操作 | 動作 |
 |------|------|
 | 年月変更 | フィルタリング更新 |
-| 拠点名入力 | リアルタイム検索 (debounce 300ms) |
+| ユーザー名/拠点名入力 | リアルタイム検索 (debounce 300ms) |
 | アプリ選択 | フィルタリング更新 |
 | 超過のみトグル | フィルタリング更新（利用率100%超過のレコードのみ表示） |
 | CSV出力ボタン | 現在のフィルタ条件でCSVダウンロード（`usages_{年月}.csv`） |
@@ -109,11 +110,11 @@ public function getUsagesProperty()
 
 **CSVヘッダー:**
 ```
-年月,拠点名,プラン,アプリ名,利用回数,月間上限,利用率(%),最終更新
+年月,ユーザー名,拠点名,プラン,アプリ名,利用回数,月間上限,利用率(%),最終更新
 ```
 
 **データ取得:**
-- 現在のフィルタ条件（年月、拠点名、アプリ、制限超過のみ）をすべて適用
+- 現在のフィルタ条件（年月、ユーザー名/拠点名、アプリ、制限超過のみ）をすべて適用
 - ページネーションなし（全件出力）
 - 利用率は小数点第1位まで表示（例: 95.3）
 - 削除されたアプリは「削除されたアプリ」と表示
@@ -127,21 +128,21 @@ class UsageList extends Component
     use WithPagination;
 
     public $month;
-    public $teamSearch = '';
+    public $userSearch = '';  // ユーザー名または拠点名で検索
     public $appFilter = '';
     public $overLimitOnly = false;
 
     public $selectedUsage = null;
     public $showEditModal = false;
 
-    protected $queryString = ['month', 'teamSearch', 'appFilter', 'overLimitOnly'];
+    protected $queryString = ['month', 'userSearch', 'appFilter', 'overLimitOnly'];
 
-    public function mount()
+    public function mount(): void
     {
         $this->month = now()->format('Y-m');
     }
 
-    public function openEditModal(MonthlyApiUsage $usage)
+    public function openEditModal(MonthlyApiUsage $usage): void
     {
         $this->selectedUsage = $usage;
         $this->showEditModal = true;
@@ -152,12 +153,13 @@ class UsageList extends Component
         // 現在のフィルタ条件を適用したデータを取得
         $usages = MonthlyApiUsage::query()
             ->when($this->month, fn($q) => $q->where('year_month', $this->month))
-            ->when($this->teamSearch, fn($q) => $q->whereHas('team', fn($q) =>
-                $q->where('name', 'like', "%{$this->teamSearch}%")
-            ))
+            ->when($this->userSearch, fn($q) => $q
+                ->whereHas('user', fn($q) => $q->where('name', 'like', "%{$this->userSearch}%"))
+                ->orWhereHas('team', fn($q) => $q->where('name', 'like', "%{$this->userSearch}%"))
+            )
             ->when($this->appFilter, fn($q) => $q->where('dify_app_id', $this->appFilter))
             ->when($this->overLimitOnly, fn($q) => $q->whereRaw('count > monthly_limit'))
-            ->with(['team.plan', 'difyApp'])
+            ->with(['user.plan', 'user.currentTeam', 'team', 'difyApp'])
             ->orderByDesc('count')
             ->get();
 
@@ -170,6 +172,7 @@ class UsageList extends Component
             // CSVヘッダー
             fputcsv($handle, [
                 '年月',
+                'ユーザー名',
                 '拠点名',
                 'プラン',
                 'アプリ名',
@@ -187,8 +190,9 @@ class UsageList extends Component
 
                 fputcsv($handle, [
                     $usage->year_month,
+                    $usage->user->name ?? '',
                     $usage->team->name ?? '',
-                    $usage->team->plan->name ?? '',
+                    $usage->user?->plan->name ?? '',
                     $usage->difyApp->name ?? '削除されたアプリ',
                     $usage->count,
                     $usage->monthly_limit,
