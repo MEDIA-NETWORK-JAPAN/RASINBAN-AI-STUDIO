@@ -103,7 +103,7 @@ class TeamListTest extends TestCase
     }
 
     /**
-     * TC-A02-008: 拠点新規作成 - TeamとTeamApiKeyが作成され、一覧が更新される
+     * TC-A02-008: 拠点新規作成 - Team、User、UserApiKeyが作成され、一覧が更新される
      *
      * Note: This is a frontend (Livewire) interaction test.
      * Skipped as it requires browser testing (Dusk).
@@ -124,7 +124,7 @@ class TeamListTest extends TestCase
     }
 
     /**
-     * TC-A02-010: バリデーションエラー（契約プラン） - 契約プランを未選択で保存すると失敗
+     * TC-A02-010: バリデーションエラー（管理者メール重複） - 既存メールアドレスで保存すると失敗
      *
      * Note: Requires Livewire component implementation
      */
@@ -154,7 +154,7 @@ class TeamListTest extends TestCase
     }
 
     /**
-     * TC-A02-013: 検索機能（担当者名） - 該当オーナーの拠点のみ表示される
+     * TC-A02-013: モーダル開閉時のフォームリセット - モーダルを閉じて再度開くと入力値がリセットされる
      *
      * Note: Requires Livewire component implementation
      */
@@ -174,7 +174,7 @@ class TeamListTest extends TestCase
     }
 
     /**
-     * TC-A02-015: プランフィルタ - Standardプランの拠点のみ表示される
+     * TC-A02-015: 複数フィルタの組み合わせ - 拠点名と制限超過フィルタを組み合わせると絞り込まれる
      *
      * Note: Requires Livewire component implementation
      */

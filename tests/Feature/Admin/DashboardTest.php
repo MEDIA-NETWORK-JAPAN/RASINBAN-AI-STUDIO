@@ -169,16 +169,15 @@ class DashboardTest extends TestCase
 
         $admin = $this->createAdminUser();
 
-        // 利用率75%のテストデータ作成
+        // 利用率75%のテストデータ作成（v1.9: planはユーザー単位）
         $plan = Plan::factory()->create();
-        $team = Team::factory()->create(['plan_id' => $plan->id]);
-        $planLimit = PlanLimit::factory()->create([
+        PlanLimit::factory()->create([
             'plan_id' => $plan->id,
             'endpoint' => '/v1/chat-messages',
-            'monthly_limit' => 100,
+            'limit_count' => 100,
         ]);
-        MonthlyApiUsage::factory()->create([
-            'team_id' => $team->id,
+        $user = User::factory()->withPersonalTeam()->withPlan($plan)->create();
+        MonthlyApiUsage::factory()->forUser($user)->create([
             'endpoint' => '/v1/chat-messages',
             'request_count' => 75, // 75%使用
             'usage_month' => now()->format('Y-m'),
@@ -206,7 +205,7 @@ class DashboardTest extends TestCase
     }
 
     /**
-     * TC-A01-011: すべて見るリンククリック - /admin/teams へ遷移
+     * TC-A01-011: すべて見るリンククリック - /admin/usages へ遷移
      *
      * Note: This is a frontend (Alpine.js/Livewire) interaction test.
      * Skipped as it requires browser testing (Dusk).
