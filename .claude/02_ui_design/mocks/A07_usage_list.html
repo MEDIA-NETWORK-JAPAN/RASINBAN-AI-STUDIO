@@ -61,18 +61,20 @@
           // フィルタ条件
           filters: {
               month: '2023-10',
+              user: '',
               team: '',
               app: 'All',
               overLimitOnly: false
           },
 
           // モックデータ (初期表示用)
+          // ※ 設計変更: ユーザー単位の利用実績 (user フィールド追加、plan はユーザーのプラン)
           usages: [
-              { id: 1, month: '2023-10', team: '東京本社 営業部', plan: 'Standard Plan', app: 'カスタマーサポートBot', appIcon: 'fa-robot', appColor: 'indigo', count: 45280, limit: 100000, updatedAt: '2023-10-25 14:30' },
-              { id: 2, month: '2023-10', team: '東京本社 営業部', plan: 'Standard Plan', app: '日報要約ジェネレーター', appIcon: 'fa-file-alt', appColor: 'purple', count: 12450, limit: 100000, updatedAt: '2023-10-25 12:15' },
-              { id: 3, month: '2023-10', team: '大阪支店 開発部', plan: 'Light Plan', app: 'カスタマーサポートBot', appIcon: 'fa-robot', appColor: 'indigo', count: 30050, limit: 30000, updatedAt: '2023-10-24 09:00' },
-              { id: 4, month: '2023-10', team: '名古屋営業所', plan: 'Pro Plan', app: '社内QA検索', appIcon: 'fa-search', appColor: 'green', count: 120500, limit: 500000, updatedAt: '2023-10-25 10:00' },
-              { id: 5, month: '2023-09', team: '福岡支店', plan: 'Light Plan', app: '日報要約ジェネレーター', appIcon: 'fa-file-alt', appColor: 'purple', count: 28000, limit: 30000, updatedAt: '2023-09-30 23:59' },
+              { id: 1, month: '2023-10', user: '田中 太郎', team: '東京本社 営業部', plan: 'Standard Plan', app: 'カスタマーサポートBot', appIcon: 'fa-robot', appColor: 'indigo', count: 45280, limit: 100000, updatedAt: '2023-10-25 14:30' },
+              { id: 2, month: '2023-10', user: '田中 太郎', team: '東京本社 営業部', plan: 'Standard Plan', app: '日報要約ジェネレーター', appIcon: 'fa-file-alt', appColor: 'purple', count: 12450, limit: 100000, updatedAt: '2023-10-25 12:15' },
+              { id: 3, month: '2023-10', user: '鈴木 次郎', team: '大阪支店 開発部', plan: 'Light Plan', app: 'カスタマーサポートBot', appIcon: 'fa-robot', appColor: 'indigo', count: 30050, limit: 30000, updatedAt: '2023-10-24 09:00' },
+              { id: 4, month: '2023-10', user: '佐藤 花子', team: '名古屋営業所', plan: 'Pro Plan', app: '社内QA検索', appIcon: 'fa-search', appColor: 'green', count: 120500, limit: 500000, updatedAt: '2023-10-25 10:00' },
+              { id: 5, month: '2023-09', user: '山田 一郎', team: '福岡支店', plan: 'Light Plan', app: '日報要約ジェネレーター', appIcon: 'fa-file-alt', appColor: 'purple', count: 28000, limit: 30000, updatedAt: '2023-09-30 23:59' },
           ],
 
           // フィルタリング済みデータ (Getter)
@@ -80,6 +82,8 @@
               return this.usages.filter(u => {
                   // 年月フィルタ
                   if (this.filters.month && u.month !== this.filters.month) return false;
+                  // ユーザー名フィルタ (部分一致)
+                  if (this.filters.user && !u.user.includes(this.filters.user)) return false;
                   // 拠点名フィルタ (部分一致)
                   if (this.filters.team && !u.team.includes(this.filters.team)) return false;
                   // アプリ名フィルタ
@@ -197,13 +201,20 @@
                 <div class="space-y-6">
 
                     <!-- ▼▼▼ Filter Bar (Live Filter) ▼▼▼ -->
+                    <!-- ※ 設計変更: ユーザー名フィルタ追加 (grid-cols-5) -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
 
                             <!-- Month Filter -->
                             <div class="col-span-1">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">対象年月</label>
                                 <input type="month" x-model="filters.month" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3">
+                            </div>
+
+                            <!-- User Filter (新規追加) -->
+                            <div class="col-span-1">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">ユーザー名</label>
+                                <input type="text" x-model="filters.user" placeholder="ユーザー名で検索" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3">
                             </div>
 
                             <!-- Team Filter -->
@@ -250,7 +261,7 @@
                                             年月
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            拠点名 / プラン
+                                            ユーザー / プラン
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             利用アプリ
@@ -274,8 +285,9 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono" x-text="usage.month"></td>
 
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-medium text-gray-900" x-text="usage.team"></div>
-                                                <div class="text-xs font-medium"
+                                                <div class="text-sm font-medium text-gray-900" x-text="usage.user"></div>
+                                                <div class="text-xs text-gray-400" x-text="'(' + usage.team + ')'"></div>
+                                                <div class="text-xs font-medium mt-0.5"
                                                      :class="usage.count > usage.limit ? 'text-red-500' : 'text-gray-500'"
                                                      x-text="usage.plan + (usage.count > usage.limit ? ' (超過)' : '')">
                                                 </div>
