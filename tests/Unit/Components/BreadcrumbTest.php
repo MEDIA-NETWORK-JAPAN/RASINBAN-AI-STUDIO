@@ -15,8 +15,6 @@ class BreadcrumbTest extends TestCase
      */
     public function test_displays_all_breadcrumb_items(): void
     {
-        $this->markTestIncomplete('Breadcrumbコンポーネント実装後に有効化');
-
         $items = [
             ['href' => '/admin', 'label' => 'ホーム'],
             ['href' => null, 'label' => '拠点'],
@@ -34,8 +32,6 @@ class BreadcrumbTest extends TestCase
      */
     public function test_first_item_is_a_link(): void
     {
-        $this->markTestIncomplete('Breadcrumbコンポーネント実装後に有効化');
-
         $items = [
             ['href' => '/admin', 'label' => 'ホーム'],
             ['href' => null, 'label' => '拠点'],
@@ -53,8 +49,6 @@ class BreadcrumbTest extends TestCase
      */
     public function test_last_item_is_not_a_link(): void
     {
-        $this->markTestIncomplete('Breadcrumbコンポーネント実装後に有効化');
-
         $items = [
             ['href' => '/admin', 'label' => 'ホーム'],
             ['href' => null, 'label' => '拠点'],
@@ -67,7 +61,7 @@ class BreadcrumbTest extends TestCase
 
         // 最後のアイテムが <a> タグで囲まれていないことを確認
         // 正規表現で「拠点」が <a> タグ内に存在しないことを検証（非貪欲マッチで最小範囲に制限）
-        $html = $view->getContent();
+        $html = (string) $view;
         $this->assertDoesNotMatchRegularExpression('/<a[^>]*>(?:(?!<\/a>).)*?拠点(?:(?!<\/a>).)*?<\/a>/s', $html);
     }
 
@@ -77,8 +71,6 @@ class BreadcrumbTest extends TestCase
      */
     public function test_displays_separator_between_items(): void
     {
-        $this->markTestIncomplete('Breadcrumbコンポーネント実装後に有効化');
-
         $items = [
             ['href' => '/admin', 'label' => 'ホーム'],
             ['href' => '/admin/teams', 'label' => '拠点一覧'],
@@ -96,8 +88,6 @@ class BreadcrumbTest extends TestCase
      */
     public function test_middle_items_are_links(): void
     {
-        $this->markTestIncomplete('Breadcrumbコンポーネント実装後に有効化');
-
         $items = [
             ['href' => '/admin', 'label' => 'ホーム'],
             ['href' => '/admin/teams', 'label' => '拠点一覧'],
@@ -117,8 +107,6 @@ class BreadcrumbTest extends TestCase
      */
     public function test_no_separator_for_single_item(): void
     {
-        $this->markTestIncomplete('Breadcrumbコンポーネント実装後に有効化');
-
         $items = [
             ['href' => null, 'label' => 'ホーム'],
         ];

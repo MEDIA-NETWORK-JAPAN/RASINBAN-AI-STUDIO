@@ -15,8 +15,6 @@ class ToastTest extends TestCase
      */
     public function test_success_type_displays_correctly(): void
     {
-        $this->markTestIncomplete('Toastコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-toast type="success" message="成功しました" />');
 
         $view->assertSee('bg-green-600', false);
@@ -31,8 +29,6 @@ class ToastTest extends TestCase
      */
     public function test_error_type_displays_correctly(): void
     {
-        $this->markTestIncomplete('Toastコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-toast type="error" message="エラーが発生しました" />');
 
         $view->assertSee('bg-red-600', false);

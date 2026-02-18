@@ -15,8 +15,6 @@ class AdminLayoutTest extends TestCase
      */
     public function test_displays_page_title_in_header(): void
     {
-        $this->markTestIncomplete('AdminLayoutコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-admin-layout title="ダッシュボード" />');
 
         $view->assertSee('ダッシュボード', false);
@@ -28,8 +26,6 @@ class AdminLayoutTest extends TestCase
      */
     public function test_displays_description_in_header(): void
     {
-        $this->markTestIncomplete('AdminLayoutコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-admin-layout title="ダッシュボード" description="システム概要" />');
 
         $view->assertSee('システム概要', false);
@@ -41,8 +37,6 @@ class AdminLayoutTest extends TestCase
      */
     public function test_displays_main_content(): void
     {
-        $this->markTestIncomplete('AdminLayoutコンポーネント実装後に有効化');
-
         $view = $this->blade('
             <x-admin-layout title="ダッシュボード">
                 <div>メインコンテンツ</div>
@@ -58,8 +52,6 @@ class AdminLayoutTest extends TestCase
      */
     public function test_includes_sidebar_component(): void
     {
-        $this->markTestIncomplete('AdminLayoutコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-admin-layout title="ダッシュボード" />');
 
         // Sidebarコンポーネントまたは関連クラスが含まれていることを確認
@@ -72,8 +64,6 @@ class AdminLayoutTest extends TestCase
      */
     public function test_includes_mobile_header_component(): void
     {
-        $this->markTestIncomplete('AdminLayoutコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-admin-layout title="ダッシュボード" />');
 
         // MobileHeaderコンポーネントまたは関連クラスが含まれていることを確認
@@ -86,8 +76,6 @@ class AdminLayoutTest extends TestCase
      */
     public function test_sidebar_always_visible_on_desktop(): void
     {
-        $this->markTestIncomplete('AdminLayoutコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-admin-layout title="ダッシュボード" />');
 
         // デスクトップでの常時表示を示すクラスが適用されている
@@ -100,8 +88,6 @@ class AdminLayoutTest extends TestCase
      */
     public function test_mobile_header_visible_on_mobile(): void
     {
-        $this->markTestIncomplete('AdminLayoutコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-admin-layout title="ダッシュボード" />');
 
         // モバイルでの表示を示すクラスが適用されている

@@ -15,8 +15,6 @@ class ToggleTest extends TestCase
      */
     public function test_off_state_displays_gray_background(): void
     {
-        $this->markTestIncomplete('Toggleコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-toggle name="is_active" :checked="false" label="有効" />');
 
         $view->assertSee('bg-gray-200', false);
@@ -28,8 +26,6 @@ class ToggleTest extends TestCase
      */
     public function test_on_state_displays_indigo_background(): void
     {
-        $this->markTestIncomplete('Toggleコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-toggle name="is_active" :checked="true" label="有効" />');
 
         $view->assertSee('peer-checked:bg-indigo-600', false);
@@ -41,8 +37,6 @@ class ToggleTest extends TestCase
      */
     public function test_displays_label(): void
     {
-        $this->markTestIncomplete('Toggleコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-toggle name="is_active" label="有効" />');
 
         $view->assertSee('有効', false);
@@ -90,8 +84,6 @@ class ToggleTest extends TestCase
      */
     public function test_checkbox_input_is_screen_reader_only(): void
     {
-        $this->markTestIncomplete('Toggleコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-toggle name="is_active" label="有効" />');
 
         $view->assertSee('sr-only', false);
@@ -115,12 +107,9 @@ class ToggleTest extends TestCase
      */
     public function test_label_not_displayed_when_not_provided(): void
     {
-        $this->markTestIncomplete('Toggleコンポーネント実装後に有効化');
-
         $view = $this->blade('<x-toggle name="is_active" />');
 
-        // ラベル要素が存在しない、または空であることを確認
-        $html = $view->getContent();
-        $this->assertStringNotContainsString('<label', $html);
+        // ラベル要素が存在しないことを確認
+        $view->assertDontSee('<label', false);
     }
 }
