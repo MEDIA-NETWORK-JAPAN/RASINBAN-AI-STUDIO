@@ -7,7 +7,16 @@
     x-data="{ isDragging: false, file: null }"
     @dragover.prevent="isDragging = true"
     @dragleave.prevent="isDragging = false"
-    @drop.prevent="isDragging = false; file = $event.dataTransfer.files[0]"
+    @drop.prevent="
+        isDragging = false;
+        const droppedFile = $event.dataTransfer.files[0];
+        if (droppedFile) {
+            file = droppedFile;
+            const dt = new DataTransfer();
+            dt.items.add(droppedFile);
+            $refs.fileInput.files = dt.files;
+        }
+    "
     @click="$refs.fileInput.click()"
     :class="isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-white hover:border-indigo-400 hover:bg-indigo-50/50'"
     class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"

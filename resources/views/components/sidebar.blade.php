@@ -1,7 +1,6 @@
 @props([])
 
 <div
-    x-data="{ sidebarOpen: false }"
     class="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out lg:static lg:translate-x-0"
     :class="{ 'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen }"
 >
@@ -20,11 +19,3 @@
         @endif
     </nav>
 </div>
-
-{{-- Mobile overlay --}}
-<div
-    x-show="sidebarOpen"
-    @click="sidebarOpen = false"
-    class="fixed inset-0 z-30 bg-gray-600 bg-opacity-75 lg:hidden"
-    style="display: none;"
-></div>

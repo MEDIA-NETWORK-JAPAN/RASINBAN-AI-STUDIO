@@ -14,15 +14,23 @@
 </head>
 <body class="min-h-screen bg-gray-100">
 
-<div class="flex h-screen overflow-hidden">
-    {{-- Desktop Sidebar (lg:static) --}}
-    <div class="hidden lg:static lg:flex lg:flex-shrink-0" data-component="Sidebar">
+<div x-data="{ sidebarOpen: false }" class="flex h-screen overflow-hidden">
+    {{-- Sidebar (fixed on mobile, static on desktop) --}}
+    <div data-component="Sidebar" class="lg:flex-shrink-0">
         <x-sidebar />
     </div>
 
+    {{-- Mobile overlay --}}
+    <div
+        x-show="sidebarOpen"
+        @click="sidebarOpen = false"
+        class="fixed inset-0 z-30 bg-gray-600 bg-opacity-75 lg:hidden"
+        style="display: none;"
+    ></div>
+
     {{-- Mobile Header (lg:hidden) --}}
-    <div class="lg:hidden fixed top-0 left-0 right-0 z-30 MobileHeader bg-white shadow-sm flex items-center justify-between px-4 py-3">
-        <button type="button" class="text-gray-500">
+    <div class="lg:hidden fixed top-0 left-0 right-0 z-40 MobileHeader bg-white shadow-sm flex items-center justify-between px-4 py-3">
+        <button type="button" @click="sidebarOpen = !sidebarOpen" class="text-gray-500">
             <i class="fas fa-bars text-xl"></i>
         </button>
         <span class="text-sm font-semibold text-gray-900">{{ config('app.name') }}</span>
