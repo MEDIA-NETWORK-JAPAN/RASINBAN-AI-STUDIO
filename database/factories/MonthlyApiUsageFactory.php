@@ -31,6 +31,35 @@ class MonthlyApiUsageFactory extends Factory
     }
 
     /**
+     * Bind to a specific user and their primary team to ensure consistency.
+     *
+     * Precondition: $user must already have a personal team.
+     * Use User::factory()->withPersonalTeam()->create() before calling this.
+     *
+     * Example:
+     *   $user = User::factory()->withPersonalTeam()->create();
+     *   MonthlyApiUsage::factory()->forUser($user)->create();
+     *
+     * @throws \RuntimeException if the user has no owned team
+     */
+    public function forUser(User $user): static
+    {
+        $team = $user->currentTeam ?? $user->ownedTeams()->first();
+
+        if ($team === null) {
+            throw new \RuntimeException(
+                'MonthlyApiUsageFactory::forUser() requires a user with a personal team. '
+                .'Use User::factory()->withPersonalTeam()->create() first.'
+            );
+        }
+
+        return $this->state([
+            'user_id' => $user->id,
+            'team_id' => $team->id,
+        ]);
+    }
+
+    /**
      * Indicate usage for a specific month.
      */
     public function forMonth(string $month): static
