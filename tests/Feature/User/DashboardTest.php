@@ -3,7 +3,7 @@
 namespace Tests\Feature\User;
 
 use App\Models\MonthlyApiUsage;
-use App\Models\Team;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\CreatesUserWithTeam;
@@ -24,7 +24,7 @@ class DashboardTest extends TestCase
     }
 
     /**
-     * TC-U01-002: 一般ユーザーでのアクセス - 200ステータス、拠点ダッシュボード表示
+     * TC-U01-002: 一般ユーザーでのアクセス - 200ステータス、ユーザーダッシュボード表示
      */
     public function test_regular_user_can_access_dashboard(): void
     {
@@ -35,11 +35,11 @@ class DashboardTest extends TestCase
         $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertStatus(200);
-        $response->assertSee('拠点ダッシュボード', false);
+        $response->assertSee('ユーザーダッシュボード', false);
     }
 
     /**
-     * TC-U01-003: 利用状況表示 - 自チームの今月の利用状況が表示される
+     * TC-U01-003: 利用状況表示 - 自ユーザーの今月の利用状況が表示される
      */
     public function test_displays_current_team_usage(): void
     {
@@ -47,11 +47,10 @@ class DashboardTest extends TestCase
             'is_admin' => false,
         ]);
 
-        // Create usage data for current team
-        MonthlyApiUsage::factory()->create([
-            'team_id' => $user->currentTeam->id,
-            'year_month' => now()->format('Y-m'),
-            'total_requests' => 150,
+        // Create usage data for current user
+        MonthlyApiUsage::factory()->forUser($user)->create([
+            'usage_month' => now()->format('Y-m'),
+            'request_count' => 150,
         ]);
 
         $response = $this->actingAs($user)->get('/dashboard');
@@ -61,26 +60,24 @@ class DashboardTest extends TestCase
     }
 
     /**
-     * TC-U01-004: 他チームデータ非表示 - 自チームのデータのみ表示される
+     * TC-U01-004: 他ユーザーデータ非表示 - 自ユーザーのデータのみ表示される
      */
     public function test_does_not_display_other_team_data(): void
     {
         $user = $this->createUserWithTeam([
             'is_admin' => false,
         ]);
-        $otherTeam = Team::factory()->create(['name' => 'Other Team']);
+        $otherUser = User::factory()->withPersonalTeam()->create();
 
-        // Create usage for other team
-        MonthlyApiUsage::factory()->create([
-            'team_id' => $otherTeam->id,
-            'year_month' => now()->format('Y-m'),
-            'total_requests' => 999,
+        // Create usage for other user
+        MonthlyApiUsage::factory()->forUser($otherUser)->create([
+            'usage_month' => now()->format('Y-m'),
+            'request_count' => 999,
         ]);
 
         $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertStatus(200);
-        $response->assertDontSee('Other Team', false);
         $response->assertDontSee('999', false);
     }
 
@@ -101,45 +98,50 @@ class DashboardTest extends TestCase
     }
 
     /**
-     * TC-U01-006: team_idパラメータ無視 - /dashboard?team_id=999 へアクセスしても自チームのデータのみ表示
+     * TC-U01-006: user_idパラメータ無視 - /dashboard?user_id=999 へアクセスしても自ユーザーのデータのみ表示
      */
-    public function test_ignores_team_id_parameter(): void
+    public function test_ignores_user_id_parameter(): void
     {
-        $user = $this->createUserWithTeam([
-            'name' => 'My Team',
-            'is_admin' => false,
-        ], ['name' => 'My Team']);
+        $user = $this->createUserWithTeam(['is_admin' => false]);
+        $otherUser = User::factory()->withPersonalTeam()->create();
 
-        $otherTeam = Team::factory()->create(['name' => 'Other Team']);
+        // Create usage data for other user (should not appear)
+        MonthlyApiUsage::factory()->forUser($otherUser)->create([
+            'usage_month' => now()->format('Y-m'),
+            'request_count' => 999,
+        ]);
 
-        // Try to access dashboard with other team's ID
-        $response = $this->actingAs($user)->get('/dashboard?team_id='.$otherTeam->id);
+        // Try to access dashboard with another user's ID
+        $response = $this->actingAs($user)->get('/dashboard?user_id='.$otherUser->id);
 
         $response->assertStatus(200);
-        $response->assertSee('My Team', false);
-        $response->assertDontSee('Other Team', false);
+        $response->assertDontSee('999', false);
     }
 
     /**
-     * TC-U01-007: current_team_idでのデータ取得 - auth()->user()->currentTeam のデータのみ取得される
+     * TC-U01-007: auth()->user()でのデータ取得 - ログインユーザー自身の利用実績のみ表示される
      */
-    public function test_uses_current_team_id_for_data_retrieval(): void
+    public function test_uses_authenticated_user_for_data_retrieval(): void
     {
-        $user = $this->createUserWithTeam([
-            'is_admin' => false,
+        $user = $this->createUserWithTeam(['is_admin' => false]);
+        $otherUser = User::factory()->withPersonalTeam()->create();
+
+        // Create usage for current user
+        MonthlyApiUsage::factory()->forUser($user)->create([
+            'usage_month' => now()->format('Y-m'),
+            'request_count' => 200,
         ]);
 
-        // Create usage for current team
-        MonthlyApiUsage::factory()->create([
-            'team_id' => $user->current_team_id,
-            'year_month' => now()->format('Y-m'),
-            'total_requests' => 100,
+        // Create usage for other user (should not appear)
+        MonthlyApiUsage::factory()->forUser($otherUser)->create([
+            'usage_month' => now()->format('Y-m'),
+            'request_count' => 999,
         ]);
 
         $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertStatus(200);
-        // Verify that current_team_id is used (not any other team)
-        $this->assertEquals($user->current_team_id, $user->currentTeam->id);
+        $response->assertSee('200', false);     // 自ユーザーのデータは表示される
+        $response->assertDontSee('999', false); // 他ユーザーのデータは非表示
     }
 }

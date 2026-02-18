@@ -60,9 +60,9 @@ return [
     'features' => [
         // Features::termsAndPrivacyPolicy(),
         // Features::profilePhotos(),
-        // Features::api(),
+        // Features::api(),                     // APIトークン機能は将来の拡張のみ
         Features::teams(['invitations' => true]),
-        Features::accountDeletion(),
+        // Features::accountDeletion(),         // 拠点ユーザーは管理者が管理するため無効化
     ],
 
     /*

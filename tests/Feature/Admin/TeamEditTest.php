@@ -2,10 +2,9 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\Plan;
 use App\Models\Team;
-use App\Models\TeamApiKey;
 use App\Models\User;
+use App\Models\UserApiKey;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\CreatesAdminUser;
@@ -57,22 +56,19 @@ class TeamEditTest extends TestCase
     }
 
     /**
-     * TC-A03-004: 基本情報表示 - チーム名、プラン（月間リクエスト制限表示付き）が表示される
+     * TC-A03-004: 基本情報表示 - チーム名が表示される
+     *
+     * Note: v1.9でplanはユーザー単位のため、チームページではチーム名のみ検証
      */
     public function test_displays_basic_info(): void
     {
         $admin = $this->createAdminUser();
-        $plan = Plan::factory()->create(['name' => 'Standard']);
-        $team = Team::factory()->create([
-            'name' => 'Tokyo Office',
-            'plan_id' => $plan->id,
-        ]);
+        $team = Team::factory()->create(['name' => 'Tokyo Office']);
 
         $response = $this->actingAs($admin)->get("/admin/teams/{$team->id}");
 
         $response->assertStatus(200);
         $response->assertSee('Tokyo Office', false);
-        $response->assertSee('Standard', false);
     }
 
     /**
@@ -95,14 +91,18 @@ class TeamEditTest extends TestCase
     }
 
     /**
-     * TC-A03-006: APIキー管理セクション表示 - APIキー（マスク表示）、最終利用日時が表示される
+     * TC-A03-006: APIキー管理セクション表示 - 所属ユーザーのAPIキー（マスク表示）、最終利用日時が表示される
+     *
+     * Note: v1.9でAPIキーはユーザー単位。所属ユーザーのUserApiKeyを表示
      */
     public function test_displays_api_key_section(): void
     {
         $admin = $this->createAdminUser();
         $team = Team::factory()->create();
-        TeamApiKey::factory()->create([
-            'team_id' => $team->id,
+        $member = User::factory()->create();
+        $team->users()->attach($member->id, ['role' => 'editor']);
+        UserApiKey::factory()->create([
+            'user_id' => $member->id,
             'last_used_at' => now()->subHours(2),
         ]);
 

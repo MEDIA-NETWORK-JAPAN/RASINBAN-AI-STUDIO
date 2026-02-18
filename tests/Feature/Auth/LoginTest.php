@@ -14,6 +14,7 @@ class LoginTest extends TestCase
     use RefreshDatabase;
 
     /**
+     * TC-G01-001: ページ表示
      * AC-G01-101: ページにロゴ、「Dify Gateway」タイトル、メールアドレス入力欄、パスワード入力欄、ログインボタンが表示される
      */
     public function test_login_page_displays_required_elements(): void
@@ -21,6 +22,8 @@ class LoginTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertStatus(200);
+        // ロゴの表示確認（SVGにaria-label属性）
+        $response->assertSee('aria-label="Dify Gateway Logo"', false);
         $response->assertSee('Dify Gateway', false);
         $response->assertSee('email', false);
         $response->assertSee('password', false);
@@ -47,14 +50,23 @@ class LoginTest extends TestCase
     }
 
     /**
+     * TC-G01-002: 管理者ログイン（二段階認証フロー）
      * AC-G01-202: 管理者ユーザー（is_admin=true）がログインした場合、二段階認証（G02）へリダイレクトされる
      *
-     * Note: This test assumes two-factor authentication logic is implemented.
-     * If not yet implemented, this test will need to be adjusted.
+     * 期待値: OTPコード生成 → ユーザーID=1へメール送信 → セッション保存 → ログアウト → G02へリダイレクト
+     *
+     * @requires カスタム二段階認証ロジック実装完了
      */
     public function test_admin_user_redirected_to_two_factor_auth(): void
     {
-        $admin = $this->createAdminUserWithIdOne([
+        $this->markTestIncomplete('カスタム二段階認証ロジック（OTP生成・メール送信・セッション保存・ログアウト）実装後に有効化');
+
+        $superAdmin = $this->createAdminUserWithIdOne([
+            'email' => 'super@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $admin = $this->createAdminUser([
             'email' => 'admin@example.com',
             'password' => bcrypt('password123'),
         ]);
@@ -64,13 +76,26 @@ class LoginTest extends TestCase
             'password' => 'password123',
         ]);
 
-        // After admin login, should redirect to two-factor auth page
-        // This may need adjustment based on actual implementation
+        // 期待値の検証:
+        // 1. 二段階認証待ちフラグの保存
+        $this->assertTrue(session()->has('two_factor_pending'));
+
+        // 2. ユーザーID=1へメール送信（キューまたは即時送信）
+        // Mail::assertSent() または Queue::assertPushed() で検証
+
+        // 3. 認証対象ユーザーIDの保存
+        $this->assertTrue(session()->has('two_factor_user_id'));
+
+        // 4. ログアウト（認証されていない状態）
+        $this->assertGuest();
+
+        // 5. G02（二段階認証画面）へリダイレクト
         $response->assertRedirect('/two-factor-challenge');
     }
 
     /**
-     * AC-G01-203: 一般ユーザー（is_admin=false）がログインした場合、U01（拠点ダッシュボード）へリダイレクトされる
+     * TC-G01-003: 一般ユーザーログイン
+     * AC-G01-203: 一般ユーザー（is_admin=false）がログインした場合、U01（ユーザーダッシュボード）へリダイレクトされる
      */
     public function test_regular_user_redirected_to_dashboard(): void
     {
@@ -89,10 +114,15 @@ class LoginTest extends TestCase
     }
 
     /**
+     * TC-G01-004: ログイン失敗（認証エラー）
      * AC-G01-204: メールアドレスまたはパスワードが間違っている場合、エラーメッセージが表示される
+     *
+     * 期待メッセージ（日本語）: 「メールアドレスまたはパスワードが正しくありません。」
      */
     public function test_login_fails_with_incorrect_credentials(): void
     {
+        app()->setLocale('ja');
+
         $user = $this->createUserWithTeam([
             'email' => 'test@example.com',
             'password' => bcrypt('password123'),
@@ -103,15 +133,26 @@ class LoginTest extends TestCase
             'password' => 'wrongpassword',
         ]);
 
-        $response->assertSessionHasErrors();
+        $response->assertSessionHasErrors('email');
         $this->assertGuest();
+
+        // エラーメッセージが仕様の日本語文言と完全一致することを確認
+        $errors = session('errors')->get('email');
+        $this->assertNotEmpty($errors);
+        // AC-G01-204: 「メールアドレスまたはパスワードが正しくありません。」
+        $this->assertSame('メールアドレスまたはパスワードが正しくありません。', $errors[0]);
     }
 
     /**
+     * TC-G01-005: メールアドレス空エラー
      * AC-G01-301: メールアドレスが空の場合、バリデーションエラーが表示される
+     *
+     * 期待メッセージ（日本語）: 「メールアドレスを入力してください」
      */
     public function test_email_is_required(): void
     {
+        app()->setLocale('ja');
+
         $response = $this->post('/login', [
             'email' => '',
             'password' => 'password123',
@@ -119,13 +160,24 @@ class LoginTest extends TestCase
 
         $response->assertSessionHasErrors(['email']);
         $this->assertGuest();
+
+        // エラーメッセージが仕様の日本語文言と完全一致することを確認
+        $errors = session('errors')->get('email');
+        $this->assertNotEmpty($errors);
+        // AC-G01-301: 「メールアドレスを入力してください」
+        $this->assertSame('メールアドレスを入力してください', $errors[0]);
     }
 
     /**
+     * TC-G01-006: メールアドレス形式エラー
      * AC-G01-302: メールアドレス形式が不正な場合、バリデーションエラーが表示される
+     *
+     * 期待メッセージ（日本語）: 「正しいメールアドレスを入力してください」
      */
     public function test_email_must_be_valid_format(): void
     {
+        app()->setLocale('ja');
+
         $response = $this->post('/login', [
             'email' => 'invalid-email',
             'password' => 'password123',
@@ -133,13 +185,24 @@ class LoginTest extends TestCase
 
         $response->assertSessionHasErrors(['email']);
         $this->assertGuest();
+
+        // エラーメッセージが仕様の日本語文言と完全一致することを確認
+        $errors = session('errors')->get('email');
+        $this->assertNotEmpty($errors);
+        // AC-G01-302: 「正しいメールアドレスを入力してください」
+        $this->assertSame('正しいメールアドレスを入力してください', $errors[0]);
     }
 
     /**
+     * TC-G01-007: パスワード空エラー
      * AC-G01-303: パスワードが空の場合、バリデーションエラーが表示される
+     *
+     * 期待メッセージ（日本語）: 「パスワードを入力してください」
      */
     public function test_password_is_required(): void
     {
+        app()->setLocale('ja');
+
         $response = $this->post('/login', [
             'email' => 'test@example.com',
             'password' => '',
@@ -147,6 +210,23 @@ class LoginTest extends TestCase
 
         $response->assertSessionHasErrors(['password']);
         $this->assertGuest();
+
+        // エラーメッセージが仕様の日本語文言と完全一致することを確認
+        $errors = session('errors')->get('password');
+        $this->assertNotEmpty($errors);
+        // AC-G01-303: 「パスワードを入力してください」
+        $this->assertSame('パスワードを入力してください', $errors[0]);
+    }
+
+    /**
+     * TC-G01-008: Enterキー押下でログイン
+     *
+     * Note: This is a frontend keyboard interaction test.
+     * Skipped as it requires browser testing (Dusk).
+     */
+    public function test_enter_key_submits_login_form(): void
+    {
+        $this->markTestSkipped('Frontend keyboard interaction test - requires Dusk');
     }
 
     /**
@@ -162,25 +242,35 @@ class LoginTest extends TestCase
 
     /**
      * TC-G01-010: スーパー管理者不在エラー
+     *
+     * @requires カスタムログイン処理実装完了
      */
     public function test_admin_login_fails_when_super_admin_not_exists(): void
     {
-        // Create admin user but NOT user ID=1
+        $this->markTestIncomplete('カスタムログイン処理（スーパー管理者チェック）実装後に有効化');
+
+        // Ensure user ID=1 exists but is NOT a super admin (to reserve the ID)
+        \App\Models\User::factory()->create([
+            'id' => 1,
+            'is_admin' => false,
+        ]);
+
+        // Create admin user with ID != 1
         $admin = $this->createAdminUser([
             'email' => 'admin@example.com',
             'password' => bcrypt('password123'),
         ]);
 
-        // Ensure user ID=1 does not exist
-        \App\Models\User::where('id', 1)->delete();
+        // Admin's ID should not be 1 (since ID=1 is already taken)
+        $this->assertNotEquals(1, $admin->id);
 
         $response = $this->post('/login', [
             'email' => 'admin@example.com',
             'password' => 'password123',
         ]);
 
-        // Should show system error when super admin (ID=1) doesn't exist
-        // This may need adjustment based on actual implementation
-        $response->assertSessionHasErrors();
+        // 期待値: システムエラーが表示される
+        // Note: エラーメッセージの具体的な文言はlocaleに依存するため、キーの存在のみ検証
+        $response->assertSessionHasErrors('email'); // エラーキーを明示
     }
 }

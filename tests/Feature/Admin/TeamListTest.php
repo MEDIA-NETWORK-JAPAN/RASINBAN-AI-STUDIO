@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\Plan;
 use App\Models\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -66,22 +65,19 @@ class TeamListTest extends TestCase
     }
 
     /**
-     * TC-A02-005: 拠点詳細情報表示 - 拠点名、プラン/利用率、管理者、最終アクセスが表示される
+     * TC-A02-005: 拠点詳細情報表示 - 拠点名、管理者、最終アクセスが表示される
+     *
+     * Note: v1.9でplanはユーザー単位のため、チームへのplan_id割り当ては廃止
      */
     public function test_displays_team_details(): void
     {
         $admin = $this->createAdminUser();
-        $plan = Plan::factory()->create(['name' => 'Standard']);
-        $team = Team::factory()->create([
-            'name' => 'Tokyo Office',
-            'plan_id' => $plan->id,
-        ]);
+        Team::factory()->create(['name' => 'Tokyo Office']);
 
         $response = $this->actingAs($admin)->get('/admin/teams');
 
         $response->assertStatus(200);
         $response->assertSee('Tokyo Office', false);
-        $response->assertSee('Standard', false);
     }
 
     /**
@@ -107,7 +103,7 @@ class TeamListTest extends TestCase
     }
 
     /**
-     * TC-A02-008: 拠点新規作成 - TeamとTeamApiKeyが作成され、一覧が更新される
+     * TC-A02-008: 拠点新規作成 - Team、User、UserApiKeyが作成され、一覧が更新される
      *
      * Note: This is a frontend (Livewire) interaction test.
      * Skipped as it requires browser testing (Dusk).
@@ -128,7 +124,7 @@ class TeamListTest extends TestCase
     }
 
     /**
-     * TC-A02-010: バリデーションエラー（契約プラン） - 契約プランを未選択で保存すると失敗
+     * TC-A02-010: バリデーションエラー（管理者メール重複） - 既存メールアドレスで保存すると失敗
      *
      * Note: Requires Livewire component implementation
      */
@@ -158,7 +154,7 @@ class TeamListTest extends TestCase
     }
 
     /**
-     * TC-A02-013: 検索機能（担当者名） - 該当オーナーの拠点のみ表示される
+     * TC-A02-013: モーダル開閉時のフォームリセット - モーダルを閉じて再度開くと入力値がリセットされる
      *
      * Note: Requires Livewire component implementation
      */
@@ -178,7 +174,7 @@ class TeamListTest extends TestCase
     }
 
     /**
-     * TC-A02-015: プランフィルタ - Standardプランの拠点のみ表示される
+     * TC-A02-015: 複数フィルタの組み合わせ - 拠点名と制限超過フィルタを組み合わせると絞り込まれる
      *
      * Note: Requires Livewire component implementation
      */

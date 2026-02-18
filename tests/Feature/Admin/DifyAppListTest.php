@@ -123,7 +123,7 @@ class DifyAppListTest extends TestCase
         $admin = $this->createAdminUser();
         DifyApp::factory()->create([
             'name' => 'Test App',
-            'api_key_encrypted' => encrypt('test-key'),
+            'api_key' => 'app-testkey123',
         ]);
 
         $response = $this->actingAs($admin)->get('/admin/apps');

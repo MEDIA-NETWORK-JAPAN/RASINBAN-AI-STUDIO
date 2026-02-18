@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PlanLimit extends Model
 {
+    /** @use HasFactory<\Database\Factories\PlanLimitFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'plan_id',
         'endpoint',

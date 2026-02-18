@@ -68,4 +68,19 @@ class StatusBadgeTest extends TestCase
         $view->assertSee('text-red-800', false);
         $view->assertSee('bg-red-500', false);
     }
+
+    /**
+     * TC-SB-005: ドットアイコンの表示
+     * AC-SB-006: ドットアイコンが `w-1.5 h-1.5 rounded-full` で表示される
+     */
+    public function test_displays_dot_icon_with_correct_styles(): void
+    {
+        $view = $this->blade(
+            '<x-ui.status-badge status="active" label="Active" />'
+        );
+
+        $view->assertSee('w-1.5', false);
+        $view->assertSee('h-1.5', false);
+        $view->assertSee('rounded-full', false);
+    }
 }
