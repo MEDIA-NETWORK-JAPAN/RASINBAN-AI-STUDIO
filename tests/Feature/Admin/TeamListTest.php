@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\Plan;
 use App\Models\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -66,22 +65,19 @@ class TeamListTest extends TestCase
     }
 
     /**
-     * TC-A02-005: 拠点詳細情報表示 - 拠点名、プラン/利用率、管理者、最終アクセスが表示される
+     * TC-A02-005: 拠点詳細情報表示 - 拠点名、管理者、最終アクセスが表示される
+     *
+     * Note: v1.9でplanはユーザー単位のため、チームへのplan_id割り当ては廃止
      */
     public function test_displays_team_details(): void
     {
         $admin = $this->createAdminUser();
-        $plan = Plan::factory()->create(['name' => 'Standard']);
-        $team = Team::factory()->create([
-            'name' => 'Tokyo Office',
-            'plan_id' => $plan->id,
-        ]);
+        Team::factory()->create(['name' => 'Tokyo Office']);
 
         $response = $this->actingAs($admin)->get('/admin/teams');
 
         $response->assertStatus(200);
         $response->assertSee('Tokyo Office', false);
-        $response->assertSee('Standard', false);
     }
 
     /**

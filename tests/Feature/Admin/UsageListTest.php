@@ -3,7 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\MonthlyApiUsage;
-use App\Models\Team;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\CreatesAdminUser;
@@ -56,8 +56,8 @@ class UsageListTest extends TestCase
     public function test_displays_first_fifty_records(): void
     {
         $admin = $this->createAdminUser();
-        $team = Team::factory()->create();
-        MonthlyApiUsage::factory()->count(60)->create(['team_id' => $team->id]);
+        $user = User::factory()->withPersonalTeam()->create();
+        MonthlyApiUsage::factory()->count(60)->forUser($user)->create();
 
         $response = $this->actingAs($admin)->get('/admin/usages');
 

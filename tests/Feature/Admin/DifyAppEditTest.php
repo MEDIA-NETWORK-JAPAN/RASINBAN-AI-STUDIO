@@ -79,8 +79,8 @@ class DifyAppEditTest extends TestCase
     {
         $admin = $this->createAdminUser();
         $app = DifyApp::factory()->create([
-            'endpoint_url' => 'https://api.dify.ai/v1',
-            'api_key_encrypted' => encrypt('test-api-key'),
+            'base_url' => 'https://api.dify.ai/v1',
+            'api_key' => 'app-testkey123',
         ]);
 
         $response = $this->actingAs($admin)->get("/admin/apps/{$app->id}");

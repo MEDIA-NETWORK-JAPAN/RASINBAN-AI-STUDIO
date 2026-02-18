@@ -79,7 +79,7 @@ class CsvImportTest extends TestCase
     }
 
     /**
-     * TC-A04-007: インポート実行 - Team、User、TeamApiKeyが一括作成される
+     * TC-A04-007: インポート実行 - Team、User、UserApiKeyが一括作成される
      *
      * Note: Requires Livewire component implementation
      */

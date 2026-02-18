@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Plan extends Model
 {
+    /** @use HasFactory<\Database\Factories\PlanFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'name',
         'code',
@@ -26,8 +30,8 @@ class Plan extends Model
         return $this->hasMany(PlanLimit::class);
     }
 
-    public function teams(): HasMany
+    public function users(): HasMany
     {
-        return $this->hasMany(Team::class);
+        return $this->hasMany(User::class);
     }
 }
