@@ -9,9 +9,15 @@ API利用回数の誤りを手動で補正するための機能コンポーネ�
 A07（一覧画面）から呼び出されることを想定しています。
 課金に関わる重要なデータ操作のため、Before/Afterの比較や理由の記録を重視したUIです。
 
+【設計変更点 (APIキー設計変更 v1.6 対応)】
+- 対象単位: 拠点単位 → ユーザー単位に変更
+- data モデルに user フィールド追加
+- 「拠点」表示 → 「ユーザー（拠点名）」表示に変更
+- 契約プランはユーザーのプランを参照
+
 【主な機能】
 1. 現状確認エリア
-   - 対象の拠点、アプリ、年月
+   - 対象のユーザー（拠点）、アプリ、年月
    - 現在のカウント数と上限に対する割合グラフ
 2. 修正操作エリア
    - カウント数の直接入力 / 増減ボタンによる微調整
@@ -53,12 +59,13 @@ A07（一覧画面）から呼び出されることを想定しています。
           // モーダル制御（初期表示で開く）
           open: true,
 
-          // データモデル
+          // データモデル (設計変更: ユーザー単位)
           data: {
               id: 101,
               month: '2023-10',
+              user: '田中 太郎',
               team: '東京本社 営業部',
-              plan: 'Standard Plan',
+              plan: 'Standard Plan',  // ユーザーのプラン
               app: 'カスタマーサポートBot',
               limit: 100000,
               currentCount: 45280,
@@ -161,19 +168,21 @@ A07（一覧画面）から呼び出されることを想定しています。
                 <div class="px-6 py-6">
 
                     <!-- 1. Target Information (対象データ情報) -->
+                    <!-- ※ 設計変更: ユーザー単位で表示。拠点名はサブ情報として表示。 -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <div>
                             <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">対象年月</p>
                             <p class="text-sm font-bold text-gray-900 font-mono" x-text="data.month"></p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">契約プラン</p>
+                            <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">契約プラン (ユーザー)</p>
                             <p class="text-sm font-bold text-gray-900" x-text="data.plan + ' (' + data.limit.toLocaleString() + ' limit)'"></p>
                         </div>
                         <div class="md:col-span-2 flex items-center gap-3 pt-2 border-t border-gray-200">
                             <div class="flex-1">
-                                <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">拠点 (Team)</p>
-                                <p class="text-sm font-medium text-gray-900" x-text="data.team"></p>
+                                <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">ユーザー (User)</p>
+                                <p class="text-sm font-bold text-gray-900" x-text="data.user"></p>
+                                <p class="text-xs text-gray-400 mt-0.5" x-text="data.team"></p>
                             </div>
                             <div class="flex-1">
                                 <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">アプリ (App)</p>

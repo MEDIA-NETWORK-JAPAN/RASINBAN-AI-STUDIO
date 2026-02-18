@@ -144,16 +144,16 @@ return [
     */
 
     'features' => [
-        Features::registration(),
-        Features::resetPasswords(),
-        // Features::emailVerification(),
-        Features::updateProfileInformation(),
-        Features::updatePasswords(),
-        Features::twoFactorAuthentication([
-            'confirm' => true,
-            'confirmPassword' => true,
-            // 'window' => 0,
-        ]),
+        // Features::registration(),           // 管理画面からユーザー登録するため無効化
+        Features::resetPasswords(),             // 将来的なパスワードリセット機能のため保持
+        Features::emailVerification(),          // 将来的なメール検証機能のため有効化
+        Features::updateProfileInformation(),   // 将来的なメールアドレス変更機能のため保持
+        Features::updatePasswords(),            // 将来的なパスワード変更機能のため保持
+        // Features::twoFactorAuthentication([  // カスタム二段階認証（メールOTP）を使用するため無効化
+        //     'confirm' => true,
+        //     'confirmPassword' => true,
+        //     // 'window' => 0,
+        // ]),
     ],
 
 ];

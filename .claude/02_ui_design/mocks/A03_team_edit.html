@@ -7,19 +7,22 @@
 管理者が特定の拠点（チーム）の詳細情報を確認・編集するための画面モックアップです。
 Laravel Jetstream + Livewire の管理画面を想定したUIデザインとなっています。
 
+【設計変更点 (APIキー設計変更 v1.6 対応)】
+- プラン管理: 拠点単位 → ユーザー単位に変更
+- APIキー管理: 拠点単位の独立セクション廃止 → ユーザー編集モーダル内に移動
+- Section 1 (基本情報): チーム名のみ（プラン削除）
+- Section 2 (ユーザー一覧): ユーザー追加/編集モーダルにプラン+APIキー管理を追加
+- Section 3 (危険エリア): Section 4から繰り上がり
+
 【主な機能】
-1. 基本情報・プラン設定
-   - チーム名の編集
-   - 契約プラン（Light/Standard/Pro）の変更
+1. 基本情報
+   - チーム名の編集のみ（プランはユーザー個別設定）
 2. 所属ユーザー管理
-   - ユーザー一覧の表示
-   - 新規ユーザー追加（モーダル実装）
-   - 既存ユーザー編集（モーダル実装）
+   - ユーザー一覧の表示（プラン・APIキー状態も表示）
+   - 新規ユーザー追加（モーダル: 名前/メール/パスワード/プラン/APIキー自動生成）
+   - 既存ユーザー編集（モーダル: 名前/メール/プラン変更/APIキー管理）
    - ユーザー削除
-3. APIキー管理
-   - 接続用APIキーのマスク表示/復号表示（セキュリティ対策UI）
-   - APIキーの再発行処理（確認モーダル付き）
-4. 危険な操作エリア
+3. 危険な操作エリア
    - チーム削除機能など
 
 【使用ライブラリ (CDN)】
@@ -57,7 +60,53 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
     - addUserModalOpen: ユーザー追加モーダルの開閉
     - currentUser: 編集モーダルで表示するユーザー情報の一時保持用オブジェクト
 -->
-<body class="bg-gray-50 text-gray-800 antialiased" x-data="{ sidebarOpen: false, userModalOpen: false, addUserModalOpen: false, currentUser: {} }">
+<body class="bg-gray-50 text-gray-800 antialiased"
+      x-data="{
+          sidebarOpen: false,
+          userModalOpen: false,
+          addUserModalOpen: false,
+          currentUser: {},
+
+          // ユーザー追加モーダル: 新規APIキー（自動生成）
+          newUserApiKey: '',
+          generateNewUserApiKey() {
+              this.newUserApiKey = 'uak_' + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+          },
+
+          // ユーザー編集モーダル: APIキー管理
+          editUserShowApiKey: false,
+          editUserLoading: false,
+          editUserDisplayValue: '',
+          editUserRealValue: 'uak_v8a9s8d7f6g5h4j3k2l1',
+          editUserApiKeyModalOpen: false,
+
+          revealEditUserKey() {
+              this.editUserLoading = true;
+              setTimeout(() => {
+                  this.editUserDisplayValue = this.editUserRealValue;
+                  this.editUserShowApiKey = true;
+                  this.editUserLoading = false;
+              }, 800);
+          },
+
+          regenerateEditUserKey() {
+              this.editUserApiKeyModalOpen = false;
+              this.editUserLoading = true;
+              setTimeout(() => {
+                  this.editUserRealValue = 'uak_' + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+                  this.editUserDisplayValue = this.editUserRealValue;
+                  this.editUserShowApiKey = true;
+                  this.editUserLoading = false;
+              }, 1000);
+          },
+
+          openEditUserModal(user) {
+              this.currentUser = user;
+              this.editUserShowApiKey = false;
+              this.editUserDisplayValue = 'uak_********************';
+              this.userModalOpen = true;
+          }
+      }">
 
     <!-- ▼▼▼ Mobile Header (スマホ用ヘッダー) ▼▼▼ -->
     <div class="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-30">
@@ -163,27 +212,18 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
 
                 <div class="max-w-4xl mx-auto space-y-6">
 
-                    <!-- ▼▼▼ Section 1: Basic Info & Plan (基本情報・プラン設定) ▼▼▼ -->
+                    <!-- ▼▼▼ Section 1: Basic Info (基本情報) ▼▼▼ -->
+                    <!-- ※ プランはユーザー個別設定のため削除。拠点名のみ管理。 -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
                             <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
-                                <i class="fas fa-info-circle text-gray-400"></i> 基本情報・プラン設定
+                                <i class="fas fa-info-circle text-gray-400"></i> 基本情報
                             </h2>
                         </div>
-                        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="col-span-2 md:col-span-1">
+                        <div class="p-6">
+                            <div class="max-w-sm">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">チーム名 (拠点名)</label>
                                 <input type="text" value="東京本社 営業部" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2 px-3 border">
-                            </div>
-
-                            <div class="col-span-2 md:col-span-1">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">契約プラン</label>
-                                <select class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2 px-3 border bg-white">
-                                    <option value="light">Light Plan (30k req/mo)</option>
-                                    <option value="standard" selected>Standard Plan (100k req/mo)</option>
-                                    <option value="pro">Pro Plan (500k req/mo)</option>
-                                </select>
-                                <p class="mt-1 text-xs text-gray-500">※プラン変更は即時適用されます。</p>
                             </div>
                         </div>
                     </div>
@@ -206,6 +246,8 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
                                 <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
                                     <tr>
                                         <th class="px-6 py-3 font-medium">ユーザー名 / メール</th>
+                                        <th class="px-6 py-3 font-medium">プラン</th>
+                                        <th class="px-6 py-3 font-medium">APIキー</th>
                                         <th class="px-6 py-3 font-medium">登録日</th>
                                         <th class="px-6 py-3 text-right">操作</th>
                                     </tr>
@@ -222,10 +264,15 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
                                                 </div>
                                             </div>
                                         </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">Standard</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center gap-1 text-xs text-green-600"><i class="fas fa-check-circle"></i> 発行済</span>
+                                        </td>
                                         <td class="px-6 py-4 text-gray-500">2023-10-01</td>
                                         <td class="px-6 py-4 text-right">
-                                            <!-- Trigger: Edit User Modal (Set current user data) -->
-                                            <button @click="userModalOpen = true; currentUser = {name: '田中 太郎', email: 'taro.tanaka@example.com'}" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs px-2 py-1 rounded hover:bg-indigo-50 transition-colors">
+                                            <button @click="openEditUserModal({name: '田中 太郎', email: 'taro.tanaka@example.com', plan: 'standard'})" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs px-2 py-1 rounded hover:bg-indigo-50 transition-colors">
                                                 編集
                                             </button>
                                         </td>
@@ -241,9 +288,15 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
                                                 </div>
                                             </div>
                                         </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">Light</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center gap-1 text-xs text-green-600"><i class="fas fa-check-circle"></i> 発行済</span>
+                                        </td>
                                         <td class="px-6 py-4 text-gray-500">2023-11-15</td>
                                         <td class="px-6 py-4 text-right flex items-center justify-end gap-2">
-                                            <button @click="userModalOpen = true; currentUser = {name: '鈴木 次郎', email: 'jiro.suzuki@example.com'}" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs px-2 py-1 rounded hover:bg-indigo-50 transition-colors">
+                                            <button @click="openEditUserModal({name: '鈴木 次郎', email: 'jiro.suzuki@example.com', plan: 'light'})" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs px-2 py-1 rounded hover:bg-indigo-50 transition-colors">
                                                 編集
                                             </button>
                                             <button class="text-red-600 hover:text-red-900 font-medium text-xs px-2 py-1 rounded hover:bg-red-50 transition-colors">
@@ -262,9 +315,15 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
                                                 </div>
                                             </div>
                                         </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">Pro</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center gap-1 text-xs text-gray-400"><i class="fas fa-minus-circle"></i> 未発行</span>
+                                        </td>
                                         <td class="px-6 py-4 text-gray-500">2024-01-20</td>
                                         <td class="px-6 py-4 text-right flex items-center justify-end gap-2">
-                                            <button @click="userModalOpen = true; currentUser = {name: '佐藤 花子', email: 'hanako.sato@example.com'}" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs px-2 py-1 rounded hover:bg-indigo-50 transition-colors">
+                                            <button @click="openEditUserModal({name: '佐藤 花子', email: 'hanako.sato@example.com', plan: 'pro'})" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs px-2 py-1 rounded hover:bg-indigo-50 transition-colors">
                                                 編集
                                             </button>
                                             <button class="text-red-600 hover:text-red-900 font-medium text-xs px-2 py-1 rounded hover:bg-red-50 transition-colors">
@@ -278,126 +337,8 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
                     </div>
                     <!-- ▲▲▲ Section 2 End ▲▲▲ -->
 
-                    <!-- ▼▼▼ Section 3: API Key Management (APIキー管理) ▼▼▼ -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-                         x-data="{
-                            showKey: false,
-                            loading: false,
-                            modalOpen: false,
-                            displayValue: 'demo_key_********************',
-                            realValue: 'demo_key_v8a9s8d7f6g5h4j3k2l1m0n9',
-
-                            revealKey() {
-                                this.loading = true;
-                                setTimeout(() => {
-                                    this.displayValue = this.realValue;
-                                    this.showKey = true;
-                                    this.loading = false;
-                                }, 800);
-                            },
-
-                            regenerateKey() {
-                                this.modalOpen = false;
-                                this.loading = true;
-                                setTimeout(() => {
-                                    this.realValue = 'demo_key_' + Math.random().toString(36).substr(2, 20);
-                                    this.displayValue = this.realValue;
-                                    this.showKey = true;
-                                    this.loading = false;
-                                }, 1000);
-                            }
-                         }">
-
-                        <div class="px-6 py-4 border-b border-gray-100 bg-indigo-50">
-                            <h2 class="text-base font-bold text-indigo-900 flex items-center gap-2">
-                                <i class="fas fa-key text-indigo-500"></i> 接続用APIキー管理
-                            </h2>
-                        </div>
-
-                        <div class="p-6">
-                            <p class="text-sm text-gray-600 mb-4">
-                                オンプレミスシステムからこのゲートウェイに接続するための固定APIキーです。<br>
-                                <span class="text-red-500 text-xs font-bold"><i class="fas fa-exclamation-triangle"></i> キーは外部に漏洩しないよう厳重に管理してください。</span>
-                            </p>
-
-                            <div class="relative">
-                                <div class="flex items-center border rounded-lg overflow-hidden bg-gray-50 border-gray-300 relative">
-                                    <div class="flex-1 px-4 py-3 font-mono text-sm text-gray-700 tracking-wider overflow-x-auto whitespace-nowrap"
-                                         :class="showKey ? 'bg-white' : 'bg-gray-100 text-gray-500'">
-                                        <span x-text="displayValue"></span>
-                                    </div>
-
-                                    <div class="flex items-center border-l border-gray-300 bg-white">
-                                        <button x-show="showKey"
-                                                class="px-4 py-3 text-gray-500 hover:text-indigo-600 hover:bg-gray-50 transition-colors border-r border-gray-300"
-                                                title="コピー">
-                                            <i class="far fa-copy"></i>
-                                        </button>
-
-                                        <button x-show="!showKey" @click="revealKey()"
-                                                class="px-4 py-3 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 transition-colors flex items-center gap-2">
-                                            <template x-if="loading">
-                                                <i class="fas fa-circle-notch fa-spin"></i>
-                                            </template>
-                                            <template x-if="!loading">
-                                                <i class="far fa-eye"></i>
-                                            </template>
-                                            <span>表示する</span>
-                                        </button>
-
-                                        <button @click="modalOpen = true"
-                                                class="px-4 py-3 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 transition-colors border-l border-gray-300">
-                                            <i class="fas fa-sync-alt"></i> 再発行
-                                        </button>
-                                    </div>
-                                </div>
-                                <div x-show="loading" class="absolute inset-0 bg-white/50 z-10 cursor-wait"></div>
-                            </div>
-
-                            <p class="mt-2 text-xs text-gray-400 text-right">最終利用: 2023-10-25 14:30:22</p>
-                        </div>
-
-                        <!--
-                            ▼▼▼ Component: API Key Regenerate Confirm Modal (キー再発行確認モーダル) ▼▼▼
-                            ※このモーダルは x-data 内でローカルに管理されています
-                        -->
-                        <div x-show="modalOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak>
-                            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="modalOpen = false"></div>
-                                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                        <div class="sm:flex sm:items-start">
-                                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                                                <i class="fas fa-exclamation-triangle text-red-600"></i>
-                                            </div>
-                                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">APIキーを再発行しますか？</h3>
-                                                <div class="mt-2">
-                                                    <p class="text-sm text-gray-500">
-                                                        現在のAPIキーは直ちに無効化され、新しいキーが生成されます。<br>
-                                                        <strong>オンプレミス側の設定変更が必要になります。</strong>この操作は元に戻せません。
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                                        <button @click="regenerateKey()" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-                                            再発行する
-                                        </button>
-                                        <button @click="modalOpen = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                                            キャンセル
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- ▲▲▲ API Key Confirm Modal End ▲▲▲ -->
-                    </div>
-                    <!-- ▲▲▲ Section 3 End ▲▲▲ -->
-
-                    <!-- ▼▼▼ Section 4: Danger Zone (危険エリア) ▼▼▼ -->
+                    <!-- ▼▼▼ Section 3: Danger Zone (危険エリア) ▼▼▼ -->
+                    <!-- ※ APIキー管理はユーザー編集モーダル内に移動しました -->
                     <div class="border border-red-200 rounded-xl overflow-hidden">
                         <div class="px-6 py-4 bg-red-50 flex items-center justify-between">
                             <h2 class="text-sm font-bold text-red-800">危険な操作エリア</h2>
@@ -410,7 +351,7 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
                             <button class="px-4 py-2 border border-red-300 text-red-700 rounded-lg text-sm hover:bg-red-50 font-medium">削除する</button>
                         </div>
                     </div>
-                    <!-- ▲▲▲ Section 4 End ▲▲▲ -->
+                    <!-- ▲▲▲ Section 3 End ▲▲▲ -->
 
                 </div>
 
@@ -429,8 +370,12 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
     [構成要素]
     1. Overlay (背景): bg-gray-500, クリックで閉じる
     2. Modal Panel (本体): bg-white, 中央配置
-    3. Form Content: 名前、Email、パスワード入力欄
+    3. Form Content: 名前、Email、パスワード、契約プラン、APIキー（自動生成）
     4. Action Buttons: 追加/キャンセル
+
+    [設計変更点]
+    - プランはユーザー単位のため追加モーダルで設定
+    - APIキー（user_api_keys）もユーザー追加時に発行
     ============================================================================
     -->
     <div x-show="addUserModalOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak>
@@ -459,19 +404,50 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
                             <h3 class="text-lg leading-6 font-medium text-gray-900">新規ユーザー追加</h3>
                             <div class="mt-4 space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">お名前</label>
+                                    <label class="block text-sm font-medium text-gray-700">お名前 <span class="text-red-500">*</span></label>
                                     <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3" placeholder="例: 山田 太郎">
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">メールアドレス</label>
+                                    <label class="block text-sm font-medium text-gray-700">メールアドレス <span class="text-red-500">*</span></label>
                                     <input type="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3" placeholder="例: taro.yamada@example.com">
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">初期パスワード</label>
+                                    <label class="block text-sm font-medium text-gray-700">初期パスワード <span class="text-red-500">*</span></label>
                                     <input type="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3" placeholder="例: Admin@2024">
                                     <p class="text-xs text-gray-500 mt-1">※10文字以上、小文字・大文字・数字・記号を全て含めてください。</p>
+                                </div>
+
+                                <!-- 契約プラン (ユーザー単位) -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">契約プラン <span class="text-red-500">*</span></label>
+                                    <select class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3 bg-white">
+                                        <option value="light">Light Plan (30k req/mo)</option>
+                                        <option value="standard" selected>Standard Plan (100k req/mo)</option>
+                                        <option value="pro">Pro Plan (500k req/mo)</option>
+                                    </select>
+                                    <p class="mt-1 text-xs text-gray-500">※プランはユーザー個別に設定されます。</p>
+                                </div>
+
+                                <!-- APIキー (user_api_keys) 自動生成 -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">接続用APIキー</label>
+                                    <div class="mt-1 flex rounded-md shadow-sm">
+                                        <div class="relative flex-grow focus-within:z-10">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-key text-gray-400"></i>
+                                            </div>
+                                            <input type="text" x-model="newUserApiKey" readonly
+                                                   class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md pl-10 sm:text-sm border border-gray-300 bg-gray-50 font-mono text-gray-600 cursor-not-allowed py-2">
+                                        </div>
+                                        <button @click="generateNewUserApiKey()" type="button"
+                                                class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                            <i class="fas fa-sync-alt text-gray-500"></i>
+                                            <span>生成</span>
+                                        </button>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500">※「生成」ボタンでAPIキーを発行します。空白のままでも後で発行できます。</p>
                                 </div>
                             </div>
                         </div>
@@ -499,6 +475,10 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
     既存ユーザーの情報を編集するためのポップアップウィンドウ。
     x-show="userModalOpen" で表示/非表示を制御。
     currentUser 変数にバインドされたデータをフォームに展開する。
+
+    [設計変更点]
+    - プラン変更をモーダル内で設定（ユーザー単位）
+    - APIキー管理（マスク表示/表示/コピー/再発行）をモーダル内に追加
     ============================================================================
     -->
     <div x-show="userModalOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak>
@@ -527,13 +507,58 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
                             <div class="mt-4 space-y-4">
                                 <div>
                                     <label for="edit-name" class="block text-sm font-medium text-gray-700">お名前</label>
-                                    <!-- x-bind:value で現在選択中のユーザー名を表示 -->
                                     <input type="text" id="edit-name" :value="currentUser.name || ''" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3">
                                 </div>
 
                                 <div>
                                     <label for="edit-email" class="block text-sm font-medium text-gray-700">メールアドレス</label>
                                     <input type="email" id="edit-email" :value="currentUser.email || ''" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3">
+                                </div>
+
+                                <!-- 契約プラン (ユーザー単位) -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">契約プラン</label>
+                                    <select class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 px-3 bg-white"
+                                            :value="currentUser.plan || 'standard'">
+                                        <option value="light">Light Plan (30k req/mo)</option>
+                                        <option value="standard">Standard Plan (100k req/mo)</option>
+                                        <option value="pro">Pro Plan (500k req/mo)</option>
+                                    </select>
+                                    <p class="mt-1 text-xs text-gray-500">※プラン変更は即時適用されます。</p>
+                                </div>
+
+                                <!-- APIキー管理 (user_api_keys) -->
+                                <div class="pt-2 border-t border-gray-100">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-key text-gray-400 mr-1"></i> 接続用APIキー管理
+                                    </label>
+                                    <div class="relative">
+                                        <div class="flex items-center border rounded-lg overflow-hidden bg-gray-50 border-gray-300">
+                                            <div class="flex-1 px-3 py-2 font-mono text-xs text-gray-700 tracking-wider overflow-x-auto whitespace-nowrap"
+                                                 :class="editUserShowApiKey ? 'bg-white' : 'bg-gray-100 text-gray-500'">
+                                                <span x-text="editUserShowApiKey ? editUserDisplayValue : 'uak_********************'"></span>
+                                            </div>
+                                            <div class="flex items-center border-l border-gray-300 bg-white flex-shrink-0">
+                                                <button x-show="editUserShowApiKey"
+                                                        class="px-3 py-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-50 transition-colors border-r border-gray-300"
+                                                        title="コピー">
+                                                    <i class="far fa-copy text-xs"></i>
+                                                </button>
+                                                <button x-show="!editUserShowApiKey" @click="revealEditUserKey()"
+                                                        class="px-3 py-2 text-xs font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 transition-colors flex items-center gap-1 border-r border-gray-300">
+                                                    <i class="fas fa-circle-notch fa-spin" x-show="editUserLoading"></i>
+                                                    <i class="far fa-eye" x-show="!editUserLoading"></i>
+                                                    <span>表示</span>
+                                                </button>
+                                                <button @click="editUserApiKeyModalOpen = true"
+                                                        class="px-3 py-2 text-xs font-medium text-red-600 hover:text-red-800 hover:bg-red-50 transition-colors">
+                                                    <i class="fas fa-sync-alt"></i> 再発行
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div x-show="editUserLoading" class="absolute inset-0 bg-white/50 z-10 cursor-wait"></div>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-400 text-right">最終利用: 2023-10-25 14:30</p>
                                 </div>
                             </div>
                         </div>
@@ -551,6 +576,46 @@ Laravel Jetstream + Livewire の管理画面を想定したUIデザインとな�
         </div>
     </div>
     <!-- ▲▲▲ User Edit Modal End ▲▲▲ -->
+
+    <!--
+    ============================================================================
+    ▼▼▼ Component: API Key Regenerate Confirm Modal (APIキー再発行確認モーダル) ▼▼▼
+    ユーザー編集モーダル内のAPIキー再発行確認用。グローバル管理。
+    ============================================================================
+    -->
+    <div x-show="editUserApiKeyModalOpen" class="fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="apikey-modal-title" role="dialog" aria-modal="true" x-cloak>
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="editUserApiKeyModalOpen = false"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fas fa-exclamation-triangle text-red-600"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="apikey-modal-title">APIキーを再発行しますか？</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">
+                                    現在のAPIキーは直ちに無効化され、新しいキーが生成されます。<br>
+                                    <strong>オンプレミス側の設定変更が必要になります。</strong>この操作は元に戻せません。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button @click="regenerateEditUserKey()" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                        再発行する
+                    </button>
+                    <button @click="editUserApiKeyModalOpen = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        キャンセル
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ▲▲▲ API Key Regenerate Confirm Modal End ▲▲▲ -->
 
 </body>
 </html>

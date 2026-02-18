@@ -11,7 +11,7 @@
 ## 技術スタック
 
 - **Framework:** Laravel 12.x
-- **Frontend:** Livewire 4.x (Jetstream Stack)
+- **Frontend:** Livewire 3.x (Jetstream Stack)
 - **Auth Scaffolding:** Laravel Jetstream (Teams機能有効)
 - **HTTP Client:** Laravel Http Facade (for Dify Proxy)
 - **Database:** PostgreSQL 16+
