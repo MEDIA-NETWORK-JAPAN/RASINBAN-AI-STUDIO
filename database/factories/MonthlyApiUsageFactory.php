@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\DifyApp;
 use App\Models\Team;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,6 +20,7 @@ class MonthlyApiUsageFactory extends Factory
     public function definition(): array
     {
         return [
+            'user_id' => User::factory(),
             'team_id' => Team::factory(),
             'dify_app_id' => DifyApp::factory(),
             'usage_month' => now()->format('Y-m'),

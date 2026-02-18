@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MonthlyApiUsage extends Model
 {
     protected $fillable = [
+        'user_id',
         'team_id',
         'dify_app_id',
         'usage_month',
@@ -21,6 +22,11 @@ class MonthlyApiUsage extends Model
         return [
             'last_request_at' => 'datetime',
         ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function team(): BelongsTo
