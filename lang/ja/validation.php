@@ -175,6 +175,10 @@ return [
         'email' => 'メールアドレス',
         'password' => 'パスワード',
         'name' => '名前',
+        'code' => '認証コード',
+        'current_password' => '現在のパスワード',
+        'new_password' => '新しいパスワード',
+        'password_confirmation' => 'パスワード（確認）',
     ],
 
 ];

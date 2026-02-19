@@ -1,97 +1,134 @@
 <div class="space-y-6">
-    {{-- ユーザーサマリーカード --}}
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {{-- ユーザー情報 --}}
-            <div>
-                <h3 class="text-sm font-medium text-gray-500 mb-3">アカウント情報</h3>
-                <dl class="space-y-2">
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-gray-600">ユーザー名</dt>
-                        <dd class="text-sm font-medium text-gray-900">{{ $user->name }}</dd>
-                    </div>
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-gray-600">拠点名</dt>
-                        <dd class="text-sm font-medium text-gray-900">{{ $user->currentTeam?->name ?? '-' }}</dd>
-                    </div>
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-gray-600">プラン</dt>
-                        <dd class="text-sm font-medium text-gray-900">{{ $user->plan?->name ?? '-' }}</dd>
-                    </div>
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-gray-600">APIキー状態</dt>
-                        <dd class="text-sm font-medium">
-                            @if ($user->apiKeys->where('is_active', true)->isNotEmpty())
-                                <span class="text-green-600">有効</span>
-                            @else
-                                <span class="text-gray-400">未設定</span>
-                            @endif
-                        </dd>
-                    </div>
-                </dl>
-            </div>
 
-            {{-- 今月の利用状況 --}}
-            <div>
-                <h3 class="text-sm font-medium text-gray-500 mb-3">今月の利用状況</h3>
-                <dl class="space-y-2">
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-gray-600">総利用回数</dt>
-                        <dd class="text-sm font-medium text-gray-900">{{ number_format($totalRequests) }} 回</dd>
-                    </div>
-                    <div class="flex justify-between">
-                        <dt class="text-sm text-gray-600">プラン上限</dt>
-                        <dd class="text-sm font-medium text-gray-900">
-                            {{ $planLimit > 0 ? number_format($planLimit) . ' 回' : '上限なし' }}
-                        </dd>
-                    </div>
-                </dl>
-                <div class="mt-4">
-                    <div class="flex justify-between text-xs text-gray-600 mb-1">
-                        <span>利用率</span>
-                        <span>{{ $usageRate }}%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-3">
-                        <div
-                            class="{{ $usageRate >= 90 ? 'bg-red-500' : 'bg-blue-500' }} h-3 rounded-full transition-all"
-                            style="width: {{ $usageRate }}%"
-                        ></div>
-                    </div>
-                    @if ($usageRate >= 90)
-                        <p class="mt-1 text-xs text-red-600">利用率が上限に近づいています。</p>
+    {{-- ユーザー情報サマリー --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div class="h-16 w-16 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
+                <span class="text-white text-2xl font-bold">{{ mb_substr($user->name, 0, 1) }}</span>
+            </div>
+            <div class="flex-1 text-center sm:text-left">
+                <h2 class="text-lg font-bold text-gray-900">{{ $user->name }}</h2>
+                <p class="text-sm text-gray-500">{{ $user->email }}</p>
+                <div class="flex flex-wrap gap-2 mt-2 justify-center sm:justify-start">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                        <i class="fas fa-building mr-1 text-gray-400"></i>
+                        {{ $user->currentTeam?->name ?? '-' }}
+                    </span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                        <i class="fas fa-tag mr-1"></i>
+                        {{ $user->plan?->name ?? 'プランなし' }}
+                    </span>
+                    @if ($user->apiKeys->where('is_active', true)->isNotEmpty())
+                        <x-ui.status-badge status="active" label="APIキー: 有効" />
+                    @else
+                        <x-ui.status-badge status="inactive" label="APIキー: 未設定" />
                     @endif
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- エンドポイント別利用実績 --}}
-    @if ($usages->isEmpty())
-        <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-            <i class="fas fa-chart-bar text-3xl text-gray-300 mb-3"></i>
-            <p>今月の利用実績はありません。</p>
-        </div>
-    @else
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-base font-medium text-gray-900">エンドポイント別利用実績</h3>
+    {{-- KPIカード --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        {{-- 今月の総利用回数 --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-500">今月の総利用回数</h3>
+                <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                    <i class="fas fa-exchange-alt"></i>
+                </div>
             </div>
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">エンドポイント</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">リクエスト数</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach ($usages as $usage)
-                        <tr>
-                            <td class="px-6 py-4 text-sm text-gray-900">{{ $usage->endpoint }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-900 text-right">{{ number_format($usage->request_count) }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+            <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-bold text-gray-900">{{ number_format($totalRequests) }}</span>
+                <span class="text-sm text-gray-400">回</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">全アプリ合計</p>
         </div>
-    @endif
+
+        {{-- プラン月間上限 --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-500">プラン月間上限</h3>
+                <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-2">
+                @if ($planLimit > 0)
+                    <span class="text-3xl font-bold text-gray-900">{{ number_format($planLimit) }}</span>
+                    <span class="text-sm text-gray-400">回/月</span>
+                @else
+                    <span class="text-3xl font-bold text-gray-900">-</span>
+                    <span class="text-sm text-gray-400">上限なし</span>
+                @endif
+            </div>
+            <p class="text-xs text-gray-400 mt-2">{{ $user->plan?->name ?? '-' }}</p>
+        </div>
+
+        {{-- 今月の利用率 --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-500">今月の利用率</h3>
+                <div class="p-2 rounded-lg {{ $usageRate > 90 ? 'bg-red-50 text-red-600' : ($usageRate > 70 ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600') }}">
+                    <i class="fas fa-percent"></i>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-bold {{ $usageRate > 90 ? 'text-red-600' : ($usageRate > 70 ? 'text-yellow-600' : 'text-gray-900') }}">
+                    {{ $usageRate }}%
+                </span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-1.5 mt-3">
+                <div class="h-1.5 rounded-full transition-all duration-500 {{ $usageRate > 90 ? 'bg-red-500' : ($usageRate > 70 ? 'bg-yellow-500' : 'bg-blue-500') }}"
+                     style="width: {{ $usageRate }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    {{-- アプリ別利用状況テーブル --}}
+    <x-ui.data-table title="アプリ別利用状況">
+        <x-slot name="header">
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Difyアプリ / エンドポイント</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">利用状況 (実績 / 上限)</th>
+        </x-slot>
+
+        <x-slot name="body">
+            @forelse ($usages as $usage)
+                <tr class="hover:bg-gray-50/50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-gray-900">{{ $usage['app_name'] }}</div>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ $usage['endpoint'] }}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="max-w-xs">
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="text-sm font-bold {{ $usage['usage_rate'] >= 100 ? 'text-red-600' : 'text-gray-900' }}">
+                                    {{ number_format($usage['request_count']) }} 回
+                                </span>
+                                <span class="text-xs text-gray-400">
+                                    / {{ $usage['endpoint_limit'] > 0 ? number_format($usage['endpoint_limit']) : '∞' }}
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                <div class="h-2 rounded-full transition-all duration-500 {{ $usage['usage_rate'] >= 90 ? 'bg-red-500' : 'bg-blue-500' }}"
+                                     style="width: {{ $usage['usage_rate'] }}%"></div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1 text-right">{{ $usage['usage_rate'] }}%</p>
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <x-empty-state colspan="2" icon="inbox" message="今月の利用データはありません。" />
+            @endforelse
+        </x-slot>
+
+        <x-slot name="footer">
+            <p class="text-xs text-gray-400">
+                <i class="fas fa-info-circle mr-1"></i>
+                利用状況は数分遅延する場合があります。上限超過時はAPIリクエストが拒否されます。
+            </p>
+        </x-slot>
+    </x-ui.data-table>
+
 </div>

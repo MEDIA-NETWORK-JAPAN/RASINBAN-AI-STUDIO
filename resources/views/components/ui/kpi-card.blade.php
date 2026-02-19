@@ -21,21 +21,23 @@
     };
 @endphp
 
-<div class="bg-white rounded-lg shadow p-5 flex items-start gap-4">
-    <div class="p-3 rounded-lg {{ $colorStyles['bg'] }}">
-        @if ($icon)
-            <i class="fas {{ $icon }} {{ $colorStyles['icon'] }} text-xl"></i>
-        @else
-            <span class="{{ $colorStyles['icon'] }} text-xl">&#9632;</span>
-        @endif
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center justify-between mb-4">
+        <p class="text-sm font-medium text-gray-500">{{ $label }}</p>
+        <div class="p-2 rounded-lg {{ $colorStyles['bg'] }}">
+            @if ($icon)
+                <i class="fas {{ $icon }} {{ $colorStyles['icon'] }} text-base"></i>
+            @else
+                <span class="{{ $colorStyles['icon'] }} text-base">&#9632;</span>
+            @endif
+        </div>
     </div>
 
-    <div class="flex-1">
-        <p class="text-sm text-gray-500">{{ $label }}</p>
-        <p class="text-3xl font-bold text-gray-900 mt-1">{{ $value }}</p>
-
-        @if ($subValue)
-            <p class="text-sm mt-1 {{ $subColorClass }}">{{ $subValue }}</p>
-        @endif
+    <div class="flex items-baseline gap-2">
+        <p class="text-3xl font-bold text-gray-900">{{ $value }}</p>
     </div>
+
+    @if ($subValue)
+        <p class="text-xs mt-2 {{ $subColorClass }}">{{ $subValue }}</p>
+    @endif
 </div>

@@ -5,7 +5,7 @@
 
 <div class="flex items-start justify-between mb-6">
     <div>
-        <h1 class="text-xl font-bold text-gray-900">{{ $title }}</h1>
+        <h1 class="text-xl font-bold text-gray-800">{{ $title }}</h1>
 
         @if ($description)
             <p class="mt-1 text-xs text-gray-500">{{ $description }}</p>

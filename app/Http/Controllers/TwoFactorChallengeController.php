@@ -30,8 +30,15 @@ class TwoFactorChallengeController extends Controller
             ]);
         }
 
+        $userId = $request->session()->get('two_factor_user_id');
+        $token = $userId ? TwoFactorToken::where('user_id', $userId)->first() : null;
+        $attempts = $token?->attempts ?? 0;
+        $maxAttempts = 5;
+
         return view('auth.two-factor-challenge', [
             'adminName' => $admin->name,
+            'attempts' => $attempts,
+            'maxAttempts' => $maxAttempts,
         ]);
     }
 

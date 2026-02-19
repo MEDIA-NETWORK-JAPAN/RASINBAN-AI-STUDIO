@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ログイン - {{ config('app.name') }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gradient-to-br from-indigo-100 to-blue-50 min-h-screen flex items-center justify-center p-4">
@@ -42,52 +43,56 @@
             </div>
         @endsession
 
-        <form method="POST" action="{{ route('login') }}">
+        <form method="POST" action="{{ route('login') }}" x-data="{ loading: false }" @submit="loading = true">
             @csrf
 
             {{-- Email --}}
             <div class="mb-4">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                    メールアドレス
-                </label>
-                <input
+                <x-ui.text-input
+                    label="メールアドレス"
                     type="email"
-                    id="email"
                     name="email"
-                    value="{{ old('email') }}"
+                    :value="old('email')"
                     placeholder="user@example.com"
-                    required
+                    :required="true"
                     autofocus
                     autocomplete="email"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm"
+                    ::disabled="loading"
+                    class="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                 />
             </div>
 
             {{-- Password --}}
             <div class="mb-6">
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                    パスワード
-                </label>
-                <input
+                <x-ui.text-input
+                    label="パスワード"
                     type="password"
-                    id="password"
                     name="password"
                     placeholder="パスワードを入力"
-                    required
+                    :required="true"
                     autocomplete="current-password"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm"
+                    ::disabled="loading"
+                    class="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                 />
             </div>
 
             {{-- Submit --}}
-            <button
+            <x-ui.button
                 type="submit"
-                class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition flex items-center justify-center gap-2"
+                class="w-full justify-center py-3 px-6"
+                icon="fa-sign-in-alt"
+                ::disabled="loading"
             >
-                <i class="fas fa-sign-in-alt"></i>
-                ログイン
-            </button>
+                <span x-show="!loading">ログイン</span>
+                <span x-show="loading" x-cloak>認証中...</span>
+            </x-ui.button>
         </form>
+    </div>
+
+    <div class="text-center mt-6">
+        <p class="text-xs text-gray-500">
+            © {{ date('Y') }} Dify Gateway - {{ config('app.name') }}
+        </p>
     </div>
 </div>
 

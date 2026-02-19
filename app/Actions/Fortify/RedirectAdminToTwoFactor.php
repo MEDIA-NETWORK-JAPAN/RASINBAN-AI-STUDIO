@@ -2,10 +2,12 @@
 
 namespace App\Actions\Fortify;
 
+use App\Mail\TwoFactorOtpMail;
 use App\Models\TwoFactorToken;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class RedirectAdminToTwoFactor
 {
@@ -14,6 +16,8 @@ class RedirectAdminToTwoFactor
         $user = auth()->user();
 
         if (! $user || ! $user->is_admin) {
+            $request->session()->forget(['two_factor_pending', 'two_factor_user_id']);
+
             return $next($request);
         }
 
@@ -47,7 +51,7 @@ class RedirectAdminToTwoFactor
         $request->session()->put('two_factor_pending', true);
         $request->session()->put('two_factor_user_id', $loginUserId);
 
-        // TODO: OTPメール送信 to $superAdmin->email
+        Mail::to($superAdmin->email)->send(new TwoFactorOtpMail($otp));
 
         return redirect('/two-factor-challenge');
     }
