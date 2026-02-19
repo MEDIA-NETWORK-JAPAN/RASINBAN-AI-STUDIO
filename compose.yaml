@@ -72,6 +72,20 @@ services:
             - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
         networks:
             - sail
+    pgadmin:
+        image: 'dpage/pgadmin4:latest'
+        ports:
+            - '127.0.0.1:${PGADMIN_PORT:-5050}:80'
+        environment:
+            PGADMIN_DEFAULT_EMAIL: '${PGADMIN_EMAIL}'
+            PGADMIN_DEFAULT_PASSWORD: '${PGADMIN_PASSWORD}'
+        volumes:
+            - 'sail-pgadmin:/var/lib/pgadmin'
+        networks:
+            - sail
+        depends_on:
+            pgsql:
+                condition: service_healthy
 networks:
     sail:
         driver: bridge
@@ -79,4 +93,6 @@ volumes:
     sail-pgsql:
         driver: local
     sail-redis:
+        driver: local
+    sail-pgadmin:
         driver: local

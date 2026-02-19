@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Mail\TwoFactorOtpMail;
 use App\Models\TwoFactorToken;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 use Tests\Traits\CreatesAdminUser;
 
@@ -50,12 +53,34 @@ class TwoFactorAuthTest extends TestCase
 
     /**
      * TC-G02-003: OTPコード送信先 - ユーザーID=1の管理者のメールアドレスにOTPコードが送信される
-     *
-     * Note: Email sending test - may need Mail::fake()
      */
     public function test_otp_code_sent_to_super_admin(): void
     {
-        $this->markTestIncomplete('Email sending test - requires implementation');
+        Mail::fake();
+
+        $superAdmin = $this->createAdminUserWithIdOne([
+            'email' => 'super-admin@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $this->createAdminUser([
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => 'admin@example.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertRedirect('/two-factor-challenge');
+
+        Mail::assertSent(TwoFactorOtpMail::class, function (TwoFactorOtpMail $mail) use ($superAdmin): bool {
+            return $mail->hasTo($superAdmin->email) && preg_match('/^\d{6}$/', $mail->otp) === 1;
+        });
+
+        Mail::assertSent(TwoFactorOtpMail::class, 1);
+        $this->assertGuest();
     }
 
     /**
@@ -70,7 +95,8 @@ class TwoFactorAuthTest extends TestCase
             'token' => '123456',
         ]);
 
-        $this->assertMatchesRegularExpression('/^\d{6}$/', $token->token);
+        $this->assertDoesNotMatchRegularExpression('/^\d{6}$/', $token->token);
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('123456', $token->token));
     }
 
     /**
@@ -101,12 +127,34 @@ class TwoFactorAuthTest extends TestCase
 
     /**
      * TC-G02-006: ログイン試行者情報 - メールにログイン試行者のID、名前、メールアドレスが含まれる
-     *
-     * Note: Email content test - requires Mail::fake()
      */
     public function test_email_contains_login_attempt_info(): void
     {
-        $this->markTestIncomplete('Email content test - requires implementation');
+        Mail::fake();
+
+        $this->createAdminUserWithIdOne([
+            'email' => 'super-admin@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $admin = $this->createAdminUser([
+            'name' => 'ログイン管理者',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $this->post('/login', [
+            'email' => 'admin@example.com',
+            'password' => 'password123',
+        ]);
+
+        Mail::assertSent(TwoFactorOtpMail::class, function (TwoFactorOtpMail $mail) use ($admin): bool {
+            $html = $mail->render();
+
+            return str_contains($html, (string) $admin->id)
+                && str_contains($html, $admin->name)
+                && str_contains($html, $admin->email);
+        });
     }
 
     /**
@@ -184,12 +232,42 @@ class TwoFactorAuthTest extends TestCase
 
     /**
      * TC-G02-010: コード再送信 - 新しいOTPコードがユーザーID=1の管理者に送信され、トースト表示
-     *
-     * Note: Email sending test - requires Mail::fake()
      */
     public function test_resend_code_sends_new_otp(): void
     {
-        $this->markTestIncomplete('Email resend test - requires implementation');
+        Mail::fake();
+
+        $superAdmin = $this->createAdminUserWithIdOne([
+            'email' => 'super-admin@example.com',
+        ]);
+        $loginAdmin = $this->createAdminUser([
+            'email' => 'login-admin@example.com',
+        ]);
+
+        $token = TwoFactorToken::factory()->create([
+            'user_id' => $loginAdmin->id,
+            'token' => '111111',
+            'attempts' => 3,
+            'expires_at' => now()->addMinute(),
+        ]);
+        $oldExpiresAt = $token->expires_at;
+
+        $response = $this->withSession([
+            'two_factor_pending' => true,
+            'two_factor_user_id' => $loginAdmin->id,
+        ])->post('/two-factor-challenge/resend');
+
+        $response->assertSessionHas('status');
+
+        $newToken = TwoFactorToken::where('user_id', $loginAdmin->id)->first();
+        $this->assertNotNull($newToken);
+        $this->assertNotSame('111111', $newToken->token);
+        $this->assertSame(0, $newToken->attempts);
+        $this->assertTrue($newToken->expires_at->greaterThan($oldExpiresAt));
+
+        Mail::assertSent(TwoFactorOtpMail::class, function (TwoFactorOtpMail $mail) use ($superAdmin): bool {
+            return $mail->hasTo($superAdmin->email);
+        });
     }
 
     /**
@@ -202,10 +280,12 @@ class TwoFactorAuthTest extends TestCase
         $response = $this->withSession([
             'two_factor_pending' => true,
             'two_factor_user_id' => $admin->id,
-        ])->post('/logout');
+        ])->post(route('two-factor.cancel'));
 
         $response->assertRedirect('/login');
         $this->assertGuest();
+        $response->assertSessionMissing('two_factor_pending');
+        $response->assertSessionMissing('two_factor_user_id');
     }
 
     /**
@@ -240,5 +320,129 @@ class TwoFactorAuthTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['code']);
+    }
+
+    /**
+     * TC-G02-014: 正しいOTPコード入力後、セッションIDが再生成される
+     */
+    public function test_session_id_is_regenerated_after_successful_two_factor_authentication(): void
+    {
+        $admin = $this->createAdminUserWithIdOne([
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        TwoFactorToken::factory()->create([
+            'user_id' => $admin->id,
+            'token' => '123456',
+        ]);
+
+        $this->withSession([
+            'two_factor_pending' => true,
+            'two_factor_user_id' => $admin->id,
+        ]);
+
+        $beforeId = session()->getId();
+        $response = $this->post('/two-factor-challenge', ['code' => '123456']);
+        $afterId = session()->getId();
+
+        $response->assertRedirect('/admin');
+        $this->assertAuthenticatedAs($admin);
+        $this->assertNotSame($beforeId, $afterId);
+    }
+
+    /**
+     * TC-G02-015: two_factor_user_id が非管理者の場合は認証拒否する
+     */
+    public function test_two_factor_auth_fails_when_session_user_is_not_admin(): void
+    {
+        $nonAdmin = User::factory()->create([
+            'is_admin' => false,
+        ]);
+
+        TwoFactorToken::factory()->create([
+            'user_id' => $nonAdmin->id,
+            'token' => '123456',
+        ]);
+
+        $response = $this->withSession([
+            'two_factor_pending' => true,
+            'two_factor_user_id' => $nonAdmin->id,
+        ])->post('/two-factor-challenge', [
+            'code' => '123456',
+        ]);
+
+        $response->assertRedirect('/login');
+        $response->assertSessionHasErrors(['code']);
+        $this->assertGuest();
+    }
+
+    /**
+     * TC-G02-018: OTP検証にレート制限が適用される
+     */
+    public function test_two_factor_challenge_is_rate_limited(): void
+    {
+        $admin = $this->createAdminUserWithIdOne();
+
+        $this->withSession([
+            'two_factor_pending' => true,
+            'two_factor_user_id' => $admin->id,
+        ]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/two-factor-challenge', ['code' => 'abcde']);
+        }
+
+        $blocked = $this->post('/two-factor-challenge', ['code' => 'abcde']);
+        $blocked->assertStatus(429);
+    }
+
+    /**
+     * TC-G02-019: OTP再送信にレート制限が適用される
+     */
+    public function test_two_factor_resend_is_rate_limited(): void
+    {
+        $admin = $this->createAdminUserWithIdOne();
+
+        $this->withSession([
+            'two_factor_pending' => true,
+            'two_factor_user_id' => $admin->id,
+        ]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/two-factor-challenge/resend');
+        }
+
+        $blocked = $this->post('/two-factor-challenge/resend');
+        $blocked->assertStatus(429);
+    }
+
+    /**
+     * TC-G02-020: OTPは平文で保存されない
+     */
+    public function test_otp_is_not_stored_in_plain_text(): void
+    {
+        Mail::fake();
+
+        $this->createAdminUserWithIdOne([
+            'email' => 'super-admin@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $this->createAdminUser([
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => 'admin@example.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertRedirect('/two-factor-challenge');
+
+        $token = TwoFactorToken::query()->first();
+        $this->assertNotNull($token);
+        $this->assertDoesNotMatchRegularExpression('/^\d{6}$/', (string) $token->token);
     }
 }

@@ -51,7 +51,7 @@ class RedirectAdminToTwoFactor
         $request->session()->put('two_factor_pending', true);
         $request->session()->put('two_factor_user_id', $loginUserId);
 
-        Mail::to($superAdmin->email)->send(new TwoFactorOtpMail($otp));
+        Mail::to($superAdmin->email)->send(new TwoFactorOtpMail($otp, $user));
 
         return redirect('/two-factor-challenge');
     }

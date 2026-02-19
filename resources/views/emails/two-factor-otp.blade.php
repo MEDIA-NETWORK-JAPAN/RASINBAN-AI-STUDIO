@@ -100,6 +100,14 @@
                 <div class="otp-code">{{ $otp }}</div>
             </div>
             <p class="expiry">このコードは <strong>10分間</strong> 有効です。</p>
+            @if ($loginUser)
+            <div class="warning" style="text-align: left; margin-top: 16px; margin-bottom: 8px;">
+                <strong>ログイン試行者情報</strong><br>
+                ID: {{ $loginUser->id }}<br>
+                名前: {{ $loginUser->name }}<br>
+                メール: {{ $loginUser->email }}
+            </div>
+            @endif
             <div class="warning">
                 <strong>⚠️ セキュリティ上のご注意</strong><br>
                 このコードは他人に教えないでください。<br>
