@@ -2,6 +2,7 @@
 
 use App\Models\Team;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
 new #[Layout('components.admin-layout', ['title' => '拠点一覧'])]
@@ -9,16 +10,37 @@ class extends \Livewire\Volt\Component
 {
     use WithPagination;
 
+    #[Url]
+    public string $search = '';
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
     public function with(): array
     {
         return [
-            'teams' => Team::paginate(50),
+            'teams' => Team::when(
+                $this->search,
+                fn ($q) => $q->where('name', 'ILIKE', "%{$this->search}%")
+            )->paginate(50),
         ];
     }
 }
 ?>
 
 <div class="space-y-6">
+    {{-- 検索バー --}}
+    <div class="bg-white shadow sm:rounded-lg p-4">
+        <input
+            type="text"
+            wire:model.live.debounce.300ms="search"
+            placeholder="拠点名で検索..."
+            class="rounded-md border-gray-300 text-sm w-full sm:w-64"
+        />
+    </div>
+
     <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
         <table class="min-w-full divide-y divide-gray-300">
             <thead class="bg-gray-50">

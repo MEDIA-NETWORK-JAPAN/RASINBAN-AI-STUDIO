@@ -119,7 +119,7 @@ class TeamEditTest extends TestCase
      */
     public function test_updates_basic_info(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -129,7 +129,7 @@ class TeamEditTest extends TestCase
      */
     public function test_adds_new_user_to_team(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -139,7 +139,7 @@ class TeamEditTest extends TestCase
      */
     public function test_edits_team_member(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -160,7 +160,7 @@ class TeamEditTest extends TestCase
      */
     public function test_deletes_team_member(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -192,7 +192,7 @@ class TeamEditTest extends TestCase
      */
     public function test_regenerates_api_key(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -202,7 +202,7 @@ class TeamEditTest extends TestCase
      */
     public function test_deletes_team(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -212,7 +212,7 @@ class TeamEditTest extends TestCase
      */
     public function test_validation_error_for_short_password(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -222,7 +222,7 @@ class TeamEditTest extends TestCase
      */
     public function test_validation_error_for_empty_email(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -232,7 +232,7 @@ class TeamEditTest extends TestCase
      */
     public function test_validation_error_for_empty_name(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -242,7 +242,7 @@ class TeamEditTest extends TestCase
      */
     public function test_validation_error_for_weak_password(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -252,6 +252,6 @@ class TeamEditTest extends TestCase
      */
     public function test_validation_error_for_common_password(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 }

@@ -81,7 +81,7 @@ class DrExportTest extends TestCase
      */
     public function test_generates_backup_data(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -91,7 +91,7 @@ class DrExportTest extends TestCase
      */
     public function test_downloads_json_file(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -101,7 +101,7 @@ class DrExportTest extends TestCase
      */
     public function test_exports_all_data(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -111,6 +111,6 @@ class DrExportTest extends TestCase
      */
     public function test_exports_plaintext_api_keys(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 }

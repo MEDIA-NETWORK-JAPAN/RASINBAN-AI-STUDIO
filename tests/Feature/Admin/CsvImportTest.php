@@ -55,7 +55,7 @@ class CsvImportTest extends TestCase
      */
     public function test_displays_filename_and_size(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -65,7 +65,7 @@ class CsvImportTest extends TestCase
      */
     public function test_displays_preview_table_after_upload(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -75,7 +75,7 @@ class CsvImportTest extends TestCase
      */
     public function test_displays_first_five_rows_in_preview(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -85,7 +85,7 @@ class CsvImportTest extends TestCase
      */
     public function test_imports_teams_users_and_api_keys(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -95,7 +95,7 @@ class CsvImportTest extends TestCase
      */
     public function test_displays_import_progress(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -105,7 +105,7 @@ class CsvImportTest extends TestCase
      */
     public function test_displays_import_results(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -115,7 +115,7 @@ class CsvImportTest extends TestCase
      */
     public function test_resets_form_on_continue_import(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -125,7 +125,7 @@ class CsvImportTest extends TestCase
      */
     public function test_validation_error_for_non_csv_file(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -135,7 +135,7 @@ class CsvImportTest extends TestCase
      */
     public function test_validation_error_for_oversized_file(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -145,7 +145,7 @@ class CsvImportTest extends TestCase
      */
     public function test_validation_error_for_invalid_column_count(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -155,7 +155,7 @@ class CsvImportTest extends TestCase
      */
     public function test_displays_error_for_empty_team_name(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -165,7 +165,7 @@ class CsvImportTest extends TestCase
      */
     public function test_displays_error_for_invalid_plan(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -175,7 +175,7 @@ class CsvImportTest extends TestCase
      */
     public function test_displays_error_for_empty_owner_name(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -185,7 +185,7 @@ class CsvImportTest extends TestCase
      */
     public function test_displays_error_for_invalid_email(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -195,7 +195,7 @@ class CsvImportTest extends TestCase
      */
     public function test_skips_duplicate_email_addresses(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -205,6 +205,6 @@ class CsvImportTest extends TestCase
      */
     public function test_rolls_back_on_error(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 }

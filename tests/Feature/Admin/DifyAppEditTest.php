@@ -96,7 +96,7 @@ class DifyAppEditTest extends TestCase
      */
     public function test_updates_basic_info(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -128,7 +128,7 @@ class DifyAppEditTest extends TestCase
      */
     public function test_updates_api_key(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -138,7 +138,7 @@ class DifyAppEditTest extends TestCase
      */
     public function test_soft_deletes_app(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -148,7 +148,7 @@ class DifyAppEditTest extends TestCase
      */
     public function test_preserves_usage_data_after_deletion(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -158,7 +158,7 @@ class DifyAppEditTest extends TestCase
      */
     public function test_hides_deleted_app_from_list(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -168,6 +168,6 @@ class DifyAppEditTest extends TestCase
      */
     public function test_validation_error_for_long_description(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 }

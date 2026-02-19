@@ -18,7 +18,7 @@ class UsageEditModalTest extends TestCase
      */
     public function test_displays_modal_with_current_data(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -28,7 +28,7 @@ class UsageEditModalTest extends TestCase
      */
     public function test_updates_usage_count(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -38,7 +38,7 @@ class UsageEditModalTest extends TestCase
      */
     public function test_validation_error_for_negative_value(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 
     /**
@@ -48,6 +48,6 @@ class UsageEditModalTest extends TestCase
      */
     public function test_validation_error_for_missing_reason(): void
     {
-        $this->markTestIncomplete('Livewire component test - requires implementation');
+        $this->markTestSkipped('Livewire component implementation required');
     }
 }
