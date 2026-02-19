@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Hash;
 
 class TwoFactorToken extends Model
 {
@@ -24,6 +26,13 @@ class TwoFactorToken extends Model
             'expires_at' => 'datetime',
             'attempts' => 'integer',
         ];
+    }
+
+    protected function token(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value) => Hash::make($value),
+        );
     }
 
     public function user(): BelongsTo
@@ -56,7 +65,7 @@ class TwoFactorToken extends Model
             return false;
         }
 
-        if ($this->token === $inputToken) {
+        if (Hash::check($inputToken, $this->token)) {
             $this->delete();
 
             return true;

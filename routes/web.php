@@ -12,9 +12,13 @@ Route::get('/', function () {
 Route::middleware('web')->group(function () {
     Route::get('/two-factor-challenge', [TwoFactorChallengeController::class, 'show'])
         ->name('two-factor.challenge');
-    Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'store']);
+    Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'store'])
+        ->middleware('throttle:two-factor');
     Route::post('/two-factor-challenge/resend', [TwoFactorChallengeController::class, 'resend'])
-        ->name('two-factor.resend');
+        ->name('two-factor.resend')
+        ->middleware('throttle:two-factor');
+    Route::post('/two-factor-challenge/cancel', [TwoFactorChallengeController::class, 'destroy'])
+        ->name('two-factor.cancel');
 });
 
 // User area (authenticated, any user)

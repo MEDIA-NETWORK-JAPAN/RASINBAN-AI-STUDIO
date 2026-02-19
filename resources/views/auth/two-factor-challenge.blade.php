@@ -90,7 +90,7 @@
                 </x-ui.button>
             </form>
 
-            <form method="POST" action="/logout" class="flex-1">
+            <form method="POST" action="{{ route('two-factor.cancel') }}" class="flex-1">
                 @csrf
                 <x-ui.button type="submit" variant="secondary" class="w-full justify-center py-2.5 px-4" icon="fa-sign-out-alt">
                     ログアウト

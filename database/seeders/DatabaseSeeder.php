@@ -21,31 +21,31 @@ class DatabaseSeeder extends Seeder
         $planFree = Plan::create([
             'name' => 'フリー',
             'code' => 'free',
-            'description' => '月100回まで無料で利用可能',
+            'description' => '月50回まで無料で利用可能',
             'is_active' => true,
         ]);
-        PlanLimit::create(['plan_id' => $planFree->id, 'endpoint' => '/chat-messages',       'limit_count' => 100]);
-        PlanLimit::create(['plan_id' => $planFree->id, 'endpoint' => '/completion-messages', 'limit_count' => 100]);
+        PlanLimit::create(['plan_id' => $planFree->id, 'endpoint' => '/chat-messages',       'limit_count' => 50]);
+        PlanLimit::create(['plan_id' => $planFree->id, 'endpoint' => '/completion-messages', 'limit_count' => 50]);
 
         $planStandard = Plan::create([
             'name' => 'スタンダード',
             'code' => 'standard',
-            'description' => '月5,000回まで利用可能',
+            'description' => '月300回まで利用可能',
             'is_active' => true,
         ]);
-        PlanLimit::create(['plan_id' => $planStandard->id, 'endpoint' => '/chat-messages',       'limit_count' => 5000]);
-        PlanLimit::create(['plan_id' => $planStandard->id, 'endpoint' => '/completion-messages', 'limit_count' => 5000]);
-        PlanLimit::create(['plan_id' => $planStandard->id, 'endpoint' => '/workflows/run',       'limit_count' => 1000]);
+        PlanLimit::create(['plan_id' => $planStandard->id, 'endpoint' => '/chat-messages',       'limit_count' => 300]);
+        PlanLimit::create(['plan_id' => $planStandard->id, 'endpoint' => '/completion-messages', 'limit_count' => 300]);
+        PlanLimit::create(['plan_id' => $planStandard->id, 'endpoint' => '/workflows/run',       'limit_count' => 300]);
 
         $planPro = Plan::create([
             'name' => 'プロ',
             'code' => 'pro',
-            'description' => '月50,000回まで利用可能',
+            'description' => '月500回まで利用可能',
             'is_active' => true,
         ]);
-        PlanLimit::create(['plan_id' => $planPro->id, 'endpoint' => '/chat-messages',       'limit_count' => 50000]);
-        PlanLimit::create(['plan_id' => $planPro->id, 'endpoint' => '/completion-messages', 'limit_count' => 50000]);
-        PlanLimit::create(['plan_id' => $planPro->id, 'endpoint' => '/workflows/run',       'limit_count' => 10000]);
+        PlanLimit::create(['plan_id' => $planPro->id, 'endpoint' => '/chat-messages',       'limit_count' => 500]);
+        PlanLimit::create(['plan_id' => $planPro->id, 'endpoint' => '/completion-messages', 'limit_count' => 500]);
+        PlanLimit::create(['plan_id' => $planPro->id, 'endpoint' => '/workflows/run',       'limit_count' => 500]);
 
         // ── 2. 管理者ユーザー (id=1 必須) ────────────────────
         $admin = User::create([
@@ -92,11 +92,11 @@ class DatabaseSeeder extends Seeder
 
         // ── 4. 拠点ユーザー + チーム + APIキー + 利用実績 ────
         $teamsData = [
-            ['name' => '東京本社',     'plan' => $planPro,      'usage_chat' => 4200, 'usage_complete' => 800],
-            ['name' => '大阪支社',     'plan' => $planStandard, 'usage_chat' => 4800, 'usage_complete' => 0],
-            ['name' => '名古屋支社',   'plan' => $planStandard, 'usage_chat' => 1200, 'usage_complete' => 300],
-            ['name' => '福岡支社',     'plan' => $planFree,     'usage_chat' => 90,   'usage_complete' => 10],
-            ['name' => '札幌出張所',   'plan' => $planFree,     'usage_chat' => 0,    'usage_complete' => 0],
+            ['name' => '東京本社',   'plan' => $planPro,      'usage_chat' => 420, 'usage_complete' => 65],
+            ['name' => '大阪支社',   'plan' => $planPro,      'usage_chat' => 498, 'usage_complete' => 0],
+            ['name' => '名古屋支社', 'plan' => $planStandard, 'usage_chat' => 210, 'usage_complete' => 85],
+            ['name' => '福岡支社',   'plan' => $planStandard, 'usage_chat' => 295, 'usage_complete' => 0],
+            ['name' => '札幌出張所', 'plan' => $planFree,     'usage_chat' => 38,  'usage_complete' => 9],
         ];
 
         $currentMonth = now()->format('Y-m');

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\TwoFactorOtpMail;
 use App\Models\TwoFactorToken;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class TwoFactorChallengeController extends Controller
@@ -56,7 +58,7 @@ class TwoFactorChallengeController extends Controller
         ]);
 
         $userId = $request->session()->get('two_factor_user_id');
-        $user = User::find($userId);
+        $user = $userId ? User::where('id', $userId)->where('is_admin', true)->first() : null;
 
         if (! $user) {
             $request->session()->forget(['two_factor_pending', 'two_factor_user_id']);
@@ -74,6 +76,7 @@ class TwoFactorChallengeController extends Controller
 
         if ($token->verify($request->input('code'))) {
             $request->session()->forget(['two_factor_pending', 'two_factor_user_id']);
+            $request->session()->regenerate();
             Auth::login($user);
 
             return redirect('/admin');
@@ -90,13 +93,36 @@ class TwoFactorChallengeController extends Controller
     }
 
     /**
-     * Resend OTP code (placeholder – email sending implemented separately).
+     * Resend OTP code to the super admin email.
      */
     public function resend(Request $request): RedirectResponse
     {
         if (! $request->session()->has('two_factor_pending')) {
             return redirect('/login');
         }
+
+        $userId = $request->session()->get('two_factor_user_id');
+        $user = $userId ? User::where('id', $userId)->where('is_admin', true)->first() : null;
+
+        if (! $user) {
+            $request->session()->forget(['two_factor_pending', 'two_factor_user_id']);
+
+            return redirect('/login')->withErrors(['code' => '認証情報が無効です。']);
+        }
+
+        $superAdmin = User::where('id', 1)->where('is_admin', true)->first();
+        if (! $superAdmin) {
+            $request->session()->forget(['two_factor_pending', 'two_factor_user_id']);
+
+            return redirect('/login')->withErrors(['code' => 'システムエラーが発生しました。']);
+        }
+
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        TwoFactorToken::updateOrCreate(
+            ['user_id' => $user->id],
+            ['token' => $otp, 'expires_at' => now()->addMinutes(10), 'attempts' => 0]
+        );
+        Mail::to($superAdmin->email)->send(new TwoFactorOtpMail($otp, $user));
 
         return back()->with('status', '認証コードを再送信しました。');
     }
