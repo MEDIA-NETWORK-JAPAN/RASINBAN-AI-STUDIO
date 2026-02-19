@@ -5,7 +5,7 @@
 @php
     $pct = (int) $percentage;
     $displayPct = $pct;
-    $barWidth = min($pct, 100);
+    $barWidth = max(0, min($pct, 100));
 
     if ($pct >= 100) {
         $textClass = 'text-red-600';

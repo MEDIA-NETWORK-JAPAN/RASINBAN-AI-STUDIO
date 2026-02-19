@@ -41,7 +41,7 @@
         <p class="text-sm text-gray-700 font-medium" x-text="file ? file.name : ''"></p>
         <button
             type="button"
-            @click.stop="file = null"
+            @click.stop="file = null; $refs.fileInput.value = ''"
             class="mt-2 text-gray-400 hover:text-red-500"
         >
             <i class="fas fa-times text-sm"></i>
