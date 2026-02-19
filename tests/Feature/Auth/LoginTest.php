@@ -2,7 +2,10 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Mail\TwoFactorOtpMail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 use Tests\Traits\CreatesAdminUser;
 use Tests\Traits\CreatesUserWithTeam;
@@ -59,7 +62,7 @@ class LoginTest extends TestCase
      */
     public function test_admin_user_redirected_to_two_factor_auth(): void
     {
-        $this->markTestIncomplete('カスタム二段階認証ロジック（OTP生成・メール送信・セッション保存・ログアウト）実装後に有効化');
+        Mail::fake();
 
         $superAdmin = $this->createAdminUserWithIdOne([
             'email' => 'super@example.com',
@@ -76,15 +79,16 @@ class LoginTest extends TestCase
             'password' => 'password123',
         ]);
 
-        // 期待値の検証:
         // 1. 二段階認証待ちフラグの保存
         $this->assertTrue(session()->has('two_factor_pending'));
 
-        // 2. ユーザーID=1へメール送信（キューまたは即時送信）
-        // Mail::assertSent() または Queue::assertPushed() で検証
+        // 2. OTPメールがスーパー管理者へ送信されたことを確認
+        Mail::assertSent(TwoFactorOtpMail::class, function ($mail) use ($superAdmin) {
+            return $mail->hasTo($superAdmin->email);
+        });
 
         // 3. 認証対象ユーザーIDの保存
-        $this->assertTrue(session()->has('two_factor_user_id'));
+        $this->assertEquals($admin->id, session()->get('two_factor_user_id'));
 
         // 4. ログアウト（認証されていない状態）
         $this->assertGuest();
@@ -247,21 +251,27 @@ class LoginTest extends TestCase
      */
     public function test_admin_login_fails_when_super_admin_not_exists(): void
     {
-        $this->markTestIncomplete('カスタムログイン処理（スーパー管理者チェック）実装後に有効化');
+        Mail::fake();
 
-        // Ensure user ID=1 exists but is NOT a super admin (to reserve the ID)
+        // ID=1 のユーザーを非管理者として作成（スーパー管理者不在を再現）
         \App\Models\User::factory()->create([
             'id' => 1,
             'is_admin' => false,
         ]);
 
-        // Create admin user with ID != 1
+        // PostgreSQL シーケンスリセット（ID=1 直接挿入後の衝突防止）
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users))");
+        } elseif (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE users AUTO_INCREMENT = 1');
+        }
+
+        // ID != 1 の管理者を作成
         $admin = $this->createAdminUser([
             'email' => 'admin@example.com',
             'password' => bcrypt('password123'),
         ]);
 
-        // Admin's ID should not be 1 (since ID=1 is already taken)
         $this->assertNotEquals(1, $admin->id);
 
         $response = $this->post('/login', [
@@ -269,8 +279,9 @@ class LoginTest extends TestCase
             'password' => 'password123',
         ]);
 
-        // 期待値: システムエラーが表示される
-        // Note: エラーメッセージの具体的な文言はlocaleに依存するため、キーの存在のみ検証
-        $response->assertSessionHasErrors('email'); // エラーキーを明示
+        // スーパー管理者不在のためシステムエラー → /login へリダイレクト
+        $response->assertRedirect('/login');
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
     }
 }
