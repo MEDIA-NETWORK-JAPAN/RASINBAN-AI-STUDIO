@@ -1,3 +1,11 @@
+<?php
+
+use Livewire\Attributes\Layout;
+
+new #[Layout('components.admin-layout', ['title' => 'CSV一括登録'])]
+class extends \Livewire\Volt\Component {}
+?>
+
 <div class="space-y-6">
     <div class="bg-white shadow sm:rounded-lg">
         <div class="px-4 py-5 sm:p-6">

@@ -1,3 +1,32 @@
+<?php
+
+use App\Models\Team;
+use Livewire\Attributes\Layout;
+
+new #[Layout('components.admin-layout', ['title' => '拠点編集'])]
+class extends \Livewire\Volt\Component
+{
+    public Team $team;
+
+    public function mount(Team $team): void
+    {
+        $this->team = $team;
+    }
+
+    public function with(): array
+    {
+        $members = $this->team->users()->get();
+        $apiKeys = $this->team->users()->with('apiKeys')->get()->flatMap(fn ($user) => $user->apiKeys);
+
+        return [
+            'team' => $this->team,
+            'members' => $members,
+            'apiKeys' => $apiKeys,
+        ];
+    }
+}
+?>
+
 <div class="space-y-6">
     {{-- 基本情報 --}}
     <div class="bg-white shadow sm:rounded-lg">

@@ -1,3 +1,27 @@
+<?php
+
+use App\Models\DifyApp;
+use Livewire\Attributes\Layout;
+
+new #[Layout('components.admin-layout', ['title' => 'アプリ編集'])]
+class extends \Livewire\Volt\Component
+{
+    public DifyApp $difyApp;
+
+    public function mount(DifyApp $difyApp): void
+    {
+        $this->difyApp = $difyApp;
+    }
+
+    public function with(): array
+    {
+        return [
+            'app' => $this->difyApp,
+        ];
+    }
+}
+?>
+
 <div class="space-y-6">
     {{-- 基本情報 --}}
     <div class="bg-white shadow sm:rounded-lg">

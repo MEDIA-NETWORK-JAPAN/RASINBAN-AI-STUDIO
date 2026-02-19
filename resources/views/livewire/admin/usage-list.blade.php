@@ -1,3 +1,24 @@
+<?php
+
+use App\Models\MonthlyApiUsage;
+use Livewire\Attributes\Layout;
+use Livewire\WithPagination;
+
+new #[Layout('components.admin-layout', ['title' => '利用状況'])]
+class extends \Livewire\Volt\Component
+{
+    use WithPagination;
+
+    public function with(): array
+    {
+        return [
+            'usages' => MonthlyApiUsage::with('team')->paginate(50),
+            'currentMonth' => now()->format('Y-m'),
+        ];
+    }
+}
+?>
+
 <div class="space-y-6">
     {{-- フィルタバー --}}
     <div class="bg-white shadow sm:rounded-lg p-4">

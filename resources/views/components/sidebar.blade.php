@@ -12,7 +12,7 @@
     <div class="h-16 flex items-center px-6 border-b border-gray-100">
         <div class="flex items-center gap-2 text-indigo-600">
             <i class="fas fa-network-wired text-xl"></i>
-            <span class="font-bold text-xl tracking-tight text-gray-900">Gateway <span class="text-indigo-600">Admin</span></span>
+            <span class="font-bold text-xl tracking-tight text-gray-900">Gateway Admin</span>
         </div>
     </div>
 
@@ -22,31 +22,31 @@
             {{ $navigation }}
         @else
             <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Main</p>
-            <a href="{{ route('admin.dashboard') }}"
+            <a href="{{ route('admin.dashboard') }}" wire:navigate
                class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors {{ $currentRoute === 'admin.dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                 <i class="fas fa-chart-line w-5 text-center {{ $currentRoute === 'admin.dashboard' ? 'text-indigo-600' : 'text-gray-400' }}"></i>
                 ダッシュボード
             </a>
 
             <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">Management</p>
-            <a href="{{ route('admin.teams') }}"
+            <a href="{{ route('admin.teams') }}" wire:navigate
                class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors {{ str_starts_with((string) $currentRoute, 'admin.teams') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                 <i class="fas fa-building w-5 text-center {{ str_starts_with((string) $currentRoute, 'admin.teams') ? 'text-indigo-600' : 'text-gray-400' }}"></i>
                 拠点・ユーザー管理
             </a>
-            <a href="{{ route('admin.apps') }}"
+            <a href="{{ route('admin.apps') }}" wire:navigate
                class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors {{ str_starts_with((string) $currentRoute, 'admin.apps') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                 <i class="fas fa-robot w-5 text-center {{ str_starts_with((string) $currentRoute, 'admin.apps') ? 'text-indigo-600' : 'text-gray-400' }}"></i>
                 Difyアプリ管理
             </a>
-            <a href="{{ route('admin.usages') }}"
+            <a href="{{ route('admin.usages') }}" wire:navigate
                class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors {{ str_starts_with((string) $currentRoute, 'admin.usages') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                 <i class="fas fa-file-invoice-dollar w-5 text-center {{ str_starts_with((string) $currentRoute, 'admin.usages') ? 'text-indigo-600' : 'text-gray-400' }}"></i>
                 利用状況・制限
             </a>
 
             <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">System</p>
-            <a href="{{ route('admin.dr.export') }}"
+            <a href="{{ route('admin.dr.export') }}" wire:navigate
                class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors {{ str_starts_with((string) $currentRoute, 'admin.dr.export') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                 <i class="fas fa-server w-5 text-center {{ str_starts_with((string) $currentRoute, 'admin.dr.export') ? 'text-indigo-600' : 'text-gray-400' }}"></i>
                 災害復旧 (DR)

@@ -30,7 +30,7 @@
     ></div>
 
     {{-- Mobile Header (lg:hidden) --}}
-    <div class="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center justify-between px-4 py-3">
+    <div data-component="MobileHeader" class="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center justify-between px-4 py-3">
         <button type="button" @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-700 focus:outline-none">
             <i class="fas fa-bars text-xl"></i>
         </button>

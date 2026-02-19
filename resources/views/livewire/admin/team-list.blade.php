@@ -1,3 +1,23 @@
+<?php
+
+use App\Models\Team;
+use Livewire\Attributes\Layout;
+use Livewire\WithPagination;
+
+new #[Layout('components.admin-layout', ['title' => '拠点一覧'])]
+class extends \Livewire\Volt\Component
+{
+    use WithPagination;
+
+    public function with(): array
+    {
+        return [
+            'teams' => Team::paginate(50),
+        ];
+    }
+}
+?>
+
 <div class="space-y-6">
     <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
         <table class="min-w-full divide-y divide-gray-300">
@@ -12,7 +32,7 @@
                 @foreach ($teams as $team)
                     <tr>
                         <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
-                            <a href="{{ route('admin.teams.edit', $team) }}" class="text-indigo-600 hover:text-indigo-900">
+                            <a href="{{ route('admin.teams.edit', $team) }}" wire:navigate class="text-indigo-600 hover:text-indigo-900">
                                 {{ $team->name }}
                             </a>
                         </td>

@@ -1,3 +1,55 @@
+<?php
+
+use App\Models\DifyApp;
+use App\Models\MonthlyApiUsage;
+use App\Models\Team;
+use Livewire\Attributes\Layout;
+
+new #[Layout('components.admin-layout', ['title' => 'ダッシュボード'])]
+class extends \Livewire\Volt\Component
+{
+    public function with(): array
+    {
+        $currentMonth = now()->format('Y-m');
+
+        $teamsCount = Team::where('personal_team', false)->count();
+        $totalRequests = MonthlyApiUsage::where('usage_month', $currentMonth)->sum('request_count');
+        $activeAppsCount = DifyApp::where('is_active', true)->count();
+
+        $topUsers = MonthlyApiUsage::with(['user.plan.planLimits', 'team'])
+            ->where('usage_month', $currentMonth)
+            ->get()
+            ->groupBy('user_id')
+            ->map(function ($rows) {
+                $user = $rows->first()->user;
+                $team = $rows->first()->team;
+                $requestCount = $rows->sum('request_count');
+                $planLimit = $user?->plan?->planLimits->sum('limit_count') ?? 0;
+                $usageRate = $planLimit > 0 ? min((int) round($requestCount / $planLimit * 100), 100) : 0;
+
+                return [
+                    'user_name' => $user?->name ?? '-',
+                    'team_name' => $team?->name ?? '-',
+                    'plan_name' => $user?->plan?->name ?? '-',
+                    'request_count' => $requestCount,
+                    'usage_rate' => $usageRate,
+                    'team_id' => $team?->id,
+                ];
+            })
+            ->sortByDesc('usage_rate')
+            ->take(5)
+            ->values();
+
+        return [
+            'teamsCount' => $teamsCount,
+            'totalRequests' => $totalRequests,
+            'activeAppsCount' => $activeAppsCount,
+            'topUsers' => $topUsers,
+        ];
+    }
+}
+?>
+
 <div class="space-y-6">
     {{-- KPI Cards --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -16,7 +68,7 @@
             sub-value="システム全体"
         />
         <x-ui.kpi-card
-            label="稼働Difyアプリ"
+            label="稼働アプリ数"
             :value="$activeAppsCount"
             icon="fa-robot"
             color="green"
@@ -27,7 +79,7 @@
     {{-- 利用率上位ユーザー --}}
     <x-ui.data-table title="利用率上位ユーザー（今月）">
         <x-slot name="headerActions">
-            <a href="{{ route('admin.usages') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">すべて見る →</a>
+            <a href="{{ route('admin.usages') }}" wire:navigate class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">すべて見る →</a>
         </x-slot>
 
         <x-slot name="header">

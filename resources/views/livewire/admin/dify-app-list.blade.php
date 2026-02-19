@@ -1,3 +1,23 @@
+<?php
+
+use App\Models\DifyApp;
+use Livewire\Attributes\Layout;
+use Livewire\WithPagination;
+
+new #[Layout('components.admin-layout', ['title' => 'Difyアプリ一覧'])]
+class extends \Livewire\Volt\Component
+{
+    use WithPagination;
+
+    public function with(): array
+    {
+        return [
+            'apps' => DifyApp::paginate(50),
+        ];
+    }
+}
+?>
+
 <div class="space-y-6">
     <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
         <table class="min-w-full divide-y divide-gray-300">
@@ -13,7 +33,7 @@
                 @foreach ($apps as $app)
                     <tr>
                         <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
-                            <a href="{{ route('admin.apps.edit', $app) }}" class="text-indigo-600 hover:text-indigo-900">
+                            <a href="{{ route('admin.apps.edit', $app) }}" wire:navigate class="text-indigo-600 hover:text-indigo-900">
                                 {{ $app->name }}
                             </a>
                         </td>
@@ -28,7 +48,7 @@
                             @endif
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                            <a href="{{ route('admin.apps.edit', $app) }}" class="text-indigo-600 hover:text-indigo-900">編集</a>
+                            <a href="{{ route('admin.apps.edit', $app) }}" wire:navigate class="text-indigo-600 hover:text-indigo-900">編集</a>
                         </td>
                     </tr>
                 @endforeach

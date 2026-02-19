@@ -54,7 +54,7 @@
         {{-- Navigation --}}
         <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
             <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Menu</p>
-            <a href="{{ route('dashboard') }}"
+            <a href="{{ route('dashboard') }}" wire:navigate
                class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg bg-indigo-50 text-indigo-700 group">
                 <i class="fas fa-chart-bar w-5 text-center"></i>
                 ダッシュボード
@@ -87,7 +87,7 @@
         {{-- Page Header --}}
         <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between pt-16 lg:pt-4">
             <div>
-                <h1 class="text-xl font-bold text-gray-800">マイダッシュボード</h1>
+                <h1 class="text-xl font-bold text-gray-800">{{ $title }}</h1>
                 <p class="text-xs text-gray-500 mt-1">{{ Auth::user()->currentTeam?->name }} / {{ Auth::user()->plan?->name ?? 'プランなし' }}</p>
             </div>
             <div class="flex items-center gap-2 text-sm text-gray-500">

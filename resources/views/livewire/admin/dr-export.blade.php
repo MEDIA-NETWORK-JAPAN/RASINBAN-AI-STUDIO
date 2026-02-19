@@ -1,3 +1,11 @@
+<?php
+
+use Livewire\Attributes\Layout;
+
+new #[Layout('components.admin-layout', ['title' => '災害復旧'])]
+class extends \Livewire\Volt\Component {}
+?>
+
 <div class="space-y-6">
     {{-- 警告バナー --}}
     <div class="rounded-md bg-yellow-50 p-4 border border-yellow-300">
